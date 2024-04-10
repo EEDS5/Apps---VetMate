@@ -5,7 +5,8 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('assets\svg\logo-vetmate-1.svg')} // Asegúrate de cambiar esto por la ruta real de tu logo
+       source={require('./assets/LogoVetMate.png')}
+
         style={styles.logo}
       />
       <Text style={styles.title}>Bienvenido a VetMate</Text>
