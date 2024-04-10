@@ -1,13 +1,15 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 
 const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('assets\svg\logo-vetmate-1.svg')} // Asegúrate de cambiar esto por la ruta real de tu logo
+        source={require('../../assets/img/Logo VetMate.png')} // Asegúrate de que el nombre del archivo sea exacto, sin espacios
         style={styles.logo}
+        resizeMode="contain" // Esta prop es opcional, ajusta la imagen dentro de las dimensiones definidas
       />
+      
       <Text style={styles.title}>Bienvenido a VetMate</Text>
       <TouchableOpacity
         style={styles.button}
