@@ -36,7 +36,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // color de fondo principal
+    backgroundColor: '#FFFFFF', // Color de fondo blanco
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -48,18 +48,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4C9A2A', // un color que contraste bien con el logo
+    color: '#c62828', // Color rojo característico
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#7BCDBA', // un color secundario del logo
+    backgroundColor: '#d32f2f', // Un tono más oscuro de rojo para los botones
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
     marginVertical: 10,
   },
   buttonText: {
-    color: '#FFFFFF', // un color que asegure legibilidad
+    color: '#FFFFFF', // Texto blanco para garantizar legibilidad
     fontSize: 18,
     fontWeight: 'bold',
   },
