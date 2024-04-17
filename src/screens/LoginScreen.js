@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput, Button, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
 
@@ -9,13 +9,11 @@ const LoginScreen = () => {
         // Lógica para iniciar sesión
     };
 
-    const handleGoToSignUp = () => {
-        // Lógica para ir a la página de registro
-    };
+    
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#c62828" />
+            <StatusBar barStyle="light-content"  />
             <Text style={styles.title}>Inicio de sesión</Text>
             <TextInput
                 style={styles.input}
@@ -37,7 +35,7 @@ const LoginScreen = () => {
                 onPress={handleLogin}
                 color="#d32f2f"
             />
-            <TouchableOpacity onPress={handleGoToSignUp} style={styles.signUpButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('Registro')} style={styles.signUpButton}>
                 <Text style={styles.signUpText}>¿No estás registrado? Regístrate</Text>
             </TouchableOpacity>
         </View>

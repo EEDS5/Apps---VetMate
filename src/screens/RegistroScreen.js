@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
 
-const RegistroScreen = () => {
+const RegistroScreen = ({ navigation }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -10,9 +10,7 @@ const RegistroScreen = () => {
         // Lógica para el registro de usuarios
     };
 
-    const handleGoToLogin = () => {
-        // Lógica para ir a la página de inicio de sesión
-    };
+    
 
     return (
         <View style={styles.container}>
@@ -44,7 +42,7 @@ const RegistroScreen = () => {
                 onPress={handleSignUp}
                 color="#d32f2f"
             />
-            <TouchableOpacity onPress={handleGoToLogin} style={styles.loginButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginButton}>
                 <Text style={styles.loginText}>¿Ya tienes cuenta? Inicia sesión</Text>
             </TouchableOpacity>
         </View>
