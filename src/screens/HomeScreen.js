@@ -5,7 +5,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/img/Logo VetMate.png')} 
+        source={require('../../assets/img/Logo-VetMate-Rojo.png')} // Asegúrate de que el nombre del archivo sea exacto, sin espacios
         style={styles.logo}
       />
       
