@@ -3,11 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './src/screens/HomeScreen';
-import RegistroScreen from './src/screens/RegistroScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import BuscarMatchScreen from './src/screens/BuscarMatchScreen';
-import PerfilScreen from './src/screens/PerfilScreen';
-import HistorialMedicoScreen from './src/screens/HistorialMedicoScreen';
+import RegistroScreen from './src/screens/Auth/RegistroScreen';
+import LoginScreen from './src/screens/Auth/LoginScreen';
+import BuscarMatchScreen from './src/screens/Match/BuscarMatchScreen';
+import PerfilScreen from './src/screens/Profile/PerfilScreen';
+import HistorialMedicoScreen from './src/screens/Profile/HistorialMedicoScreen';
 
 const Stack = createStackNavigator();
 
