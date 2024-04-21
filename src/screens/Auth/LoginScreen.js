@@ -6,8 +6,37 @@ const LoginScreen = ({ navigation }) => {
     const [password, setPassword] = React.useState('');
 
     const handleLogin = () => {
-        // Lógica para iniciar sesión
+        if (!email || !password) {
+            alert('Por favor, completa todos los campos.');
+            return;
+        }
+        if (!email.includes('@')) {
+            alert('Por favor, introduce un correo electrónico válido.');
+            return;
+        }
+        // Aquí iría la lógica para conectar con tu backend y verificar las credenciales
+        // Simulando una llamada al backend
+        fetch('https://tuapi.com/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Lógica para manejar la respuesta exitosa
+                console.log('Inicio de sesión exitoso');
+            } else {
+                throw new Error(data.message || 'Error al iniciar sesión');
+            }
+        })
+        .catch(error => {
+            alert(error.message);
+        });
     };
+    
 
     
 

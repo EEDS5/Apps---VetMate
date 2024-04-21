@@ -7,8 +7,41 @@ const RegistroScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
 
     const handleSignUp = () => {
-        // Lógica para el registro de usuarios
+        if (!name || !email || !password) {
+            alert('Por favor, completa todos los campos.');
+            return;
+        }
+        if (!email.includes('@')) {
+            alert('Por favor, introduce un correo electrónico válido.');
+            return;
+        }
+        // Asegúrate de que la contraseña tenga una longitud mínima, por ejemplo, 6 caracteres
+        if (password.length < 6) {
+            alert('La contraseña debe tener al menos 6 caracteres.');
+            return;
+        }
+        // Simulando una llamada al backend
+        fetch('https://tuapi.com/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Lógica para manejar la respuesta exitosa
+                console.log('Registro exitoso');
+            } else {
+                throw new Error(data.message || 'Error al registrarse');
+            }
+        })
+        .catch(error => {
+            alert(error.message);
+        });
     };
+    ;
 
     
 
