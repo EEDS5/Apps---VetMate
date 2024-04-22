@@ -22,7 +22,7 @@ const BottomTabNavigator = () => {
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName;
 
-                    if (route.name === 'Home') {
+                    if (route.name === 'HomeTab') {
                         iconName = focused ? 'home' : 'home-outline';
                     } else if (route.name === 'BuscarMatch') {
                         iconName = focused ? 'heart' : 'heart-outline';
@@ -37,7 +37,15 @@ const BottomTabNavigator = () => {
                 tabBarInactiveTintColor: inactiveTintColor,
             })}
         >
-            <Tab.Screen name="Home" component={HomeScreen} />
+            {/* Cambia el nombre de la ruta pero usa el parámetro 'options' para mantener la etiqueta como 'Home' */}
+            <Tab.Screen
+                name="HomeTab" // Nombre de ruta único
+                component={HomeScreen}
+                options={{
+                    tabBarLabel: 'Home', // Etiqueta visual que se muestra en la barra de navegación inferior
+                    headerShown: false,
+                }}
+            />
             <Tab.Screen name="BuscarMatch" component={BuscarMatchScreen} />
             <Tab.Screen name="Perfil" component={PerfilScreen} />
         </Tab.Navigator>
