@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const BuscarMatchScreen = () => {
+const BuscarMatchScreen = ( navigation ) => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Buscar Match</Text>
