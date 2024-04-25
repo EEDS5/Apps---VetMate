@@ -5,7 +5,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/img/Logo-VetMate-Rojo.png')} // Asegúrate de que el nombre del archivo sea exacto, sin espacios
+        source={require('../../assets/img/Logo-VetMate-Rojo.png')}
         style={styles.logo}
       />
       
@@ -33,6 +33,15 @@ const HomeScreen = ({ navigation }) => {
         activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>Buscar Match</Text>
+      </TouchableOpacity>
+
+      {/* Nuevo botón para el chat */}
+      <TouchableOpacity
+        style={[styles.button, styles.shadow]}
+        onPress={() => navigation.navigate('Chat')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.buttonText}>Mensajes</Text>
       </TouchableOpacity>
     </View>
   );
