@@ -3,7 +3,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import BuscarMatchScreen from '../screens/Match/BuscarMatchScreen';
-import PerfilScreen from '../screens/Profile/PerfilScreen';
+import ProfileStackNavigator from './ProfileStackNavigator';
 import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
@@ -26,7 +26,7 @@ const BottomTabNavigator = () => {
                         iconName = focused ? 'home' : 'home-outline';
                     } else if (route.name === 'BuscarMatch') {
                         iconName = focused ? 'heart' : 'heart-outline';
-                    } else if (route.name === 'Perfil') {
+                    } else if (route.name === 'PerfilTab') {
                         iconName = focused ? 'person' : 'person-outline';
                     }
 
@@ -47,7 +47,14 @@ const BottomTabNavigator = () => {
                 }}
             />
             <Tab.Screen name="BuscarMatch" component={BuscarMatchScreen} />
-            <Tab.Screen name="Perfil" component={PerfilScreen} />
+            <Tab.Screen
+                name="PerfilTab"
+                component={ProfileStackNavigator} // Usa el ProfileStackNavigator aquí
+                options={{
+                    tabBarLabel: 'Perfil', // Asegúrate de que la etiqueta es coherente
+                    headerShown: false,
+                }}
+            />
         </Tab.Navigator>
     );
 };

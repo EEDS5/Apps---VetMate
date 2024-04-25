@@ -1,3 +1,4 @@
+//src/screens/HomeScreen.js
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, Platform } from 'react-native';
 
@@ -8,9 +9,8 @@ const HomeScreen = ({ navigation }) => {
         source={require('../../assets/img/Logo-VetMate-Rojo.png')}
         style={styles.logo}
       />
-      
       <Text style={styles.title}>Bienvenido a VetMate</Text>
-      
+      <Text style={styles.subtitle}>Tu compañero ideal para encontrar la pareja perfecta para tu perro</Text>
       <TouchableOpacity
         style={[styles.button, styles.shadow]}
         onPress={() => navigation.navigate('Registro')}
@@ -18,7 +18,6 @@ const HomeScreen = ({ navigation }) => {
       >
         <Text style={styles.buttonText}>Registrarse</Text>
       </TouchableOpacity>
-      
       <TouchableOpacity
         style={[styles.button, styles.shadow]}
         onPress={() => navigation.navigate('Login')}
@@ -26,7 +25,6 @@ const HomeScreen = ({ navigation }) => {
       >
         <Text style={styles.buttonText}>Iniciar Sesión</Text>
       </TouchableOpacity>
-      
       <TouchableOpacity
         style={[styles.button, styles.shadow]}
         onPress={() => navigation.navigate('BuscarMatch')}
@@ -56,15 +54,21 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 32,
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#c62828',
-    marginBottom: 24,
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'gray',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: '#d32f2f',

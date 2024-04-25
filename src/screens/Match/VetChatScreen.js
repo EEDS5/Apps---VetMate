@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 
-const ChatScreen = () => {
+const VetChatScreen = () => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
 
@@ -22,7 +22,7 @@ const ChatScreen = () => {
                 )}
                 keyExtractor={(item, index) => index.toString()}
                 contentContainerStyle={styles.messagesList}
-                inverted    
+                inverted
             />
             <View style={styles.inputContainer}>
                 <TextInput
@@ -90,4 +90,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ChatScreen;
+export default VetChatScreen;

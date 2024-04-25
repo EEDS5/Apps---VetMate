@@ -4,7 +4,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import BottomTabNavigator from './BottomTabNavigator';
 import RegistroScreen from '../screens/Auth/RegistroScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
-import ChatScreen from '../screens/ChatScreen';
+import VetChatScreen from '../screens/Match/VetChatScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -35,7 +35,7 @@ const DrawerNavigator = () => {
             />
             <Drawer.Screen name="Registro" component={RegistroScreen} />
             <Drawer.Screen name="Login" component={LoginScreen} />
-            <Drawer.Screen name="Chat" component={ChatScreen} />
+            <Drawer.Screen name="VetChat" component={VetChatScreen} />
             {/* Más Drawer.Screen según sea necesario */}
         </Drawer.Navigator>
     );
