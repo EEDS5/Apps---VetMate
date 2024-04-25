@@ -32,15 +32,6 @@ const HomeScreen = ({ navigation }) => {
       >
         <Text style={styles.buttonText}>Buscar Match</Text>
       </TouchableOpacity>
-
-      {/* Nuevo botón para el chat */}
-      <TouchableOpacity
-        style={[styles.button, styles.shadow]}
-        onPress={() => navigation.navigate('VetChat')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>Mensajes</Text>
-      </TouchableOpacity>
     </View>
   );
 };

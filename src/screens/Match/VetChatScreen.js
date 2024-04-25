@@ -5,10 +5,22 @@ const VetChatScreen = () => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
 
-    const sendMessage = () => {
-        if (inputText.trim() === '') return;
-        setMessages(prevMessages => [...prevMessages, inputText]);
-        setInputText('');
+    const handleSend = () => {
+        if (inputText.trim() !== '') {
+            const newMessage = {
+                id: messages.length + 1,
+                text: inputText,
+                timestamp: new Date().getTime(),
+            };
+
+            setMessages(prevMessages => [...prevMessages, newMessage]);
+            setInputText('');
+        }
+    };
+
+    const formatTime = timestamp => {
+        const date = new Date(timestamp);
+        return `${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`;  // Padded minutes for formatting
     };
 
     return (
@@ -17,12 +29,12 @@ const VetChatScreen = () => {
                 data={messages}
                 renderItem={({ item }) => (
                     <View style={styles.messageContainer}>
-                        <Text style={styles.message}>{item}</Text>
+                        <Text style={styles.message}>{item.text}</Text>
+                        <Text style={styles.timestamp}>{formatTime(item.timestamp)}</Text>
                     </View>
                 )}
-                keyExtractor={(item, index) => index.toString()}
+                keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.messagesList}
-                
             />
             <View style={styles.inputContainer}>
                 <TextInput
@@ -30,9 +42,9 @@ const VetChatScreen = () => {
                     placeholder="Escribe tu mensaje..."
                     value={inputText}
                     onChangeText={setInputText}
-                    onSubmitEditing={sendMessage}
+                    onSubmitEditing={handleSend}
                 />
-                <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+                <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
                     <Text style={styles.sendButtonText}>Enviar</Text>
                 </TouchableOpacity>
             </View>
@@ -59,6 +71,12 @@ const styles = StyleSheet.create({
     },
     message: {
         fontSize: 16,
+        marginBottom: 4,  // Minimal space between the message and the timestamp
+    },
+    timestamp: {
+        fontSize: 12,
+        color: '#d32f2f',  // Same color as the send button
+        alignSelf: 'flex-end',
     },
     inputContainer: {
         flexDirection: 'row',
