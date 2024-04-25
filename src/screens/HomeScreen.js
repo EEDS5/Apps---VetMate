@@ -36,7 +36,7 @@ const HomeScreen = ({ navigation }) => {
       {/* Nuevo botón para el chat */}
       <TouchableOpacity
         style={[styles.button, styles.shadow]}
-        onPress={() => navigation.navigate('Chat')}
+        onPress={() => navigation.navigate('VetChat')}
         activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>Mensajes</Text>

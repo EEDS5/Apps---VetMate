@@ -22,7 +22,7 @@ const VetChatScreen = () => {
                 )}
                 keyExtractor={(item, index) => index.toString()}
                 contentContainerStyle={styles.messagesList}
-                inverted
+                
             />
             <View style={styles.inputContainer}>
                 <TextInput
@@ -47,7 +47,6 @@ const styles = StyleSheet.create({
     },
     messagesList: {
         flexGrow: 1,
-        justifyContent: 'flex-end',
     },
     messageContainer: {
         backgroundColor: '#EEEEEE',
