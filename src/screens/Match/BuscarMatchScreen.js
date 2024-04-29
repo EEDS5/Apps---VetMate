@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ImageBackground, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const BuscarMatchScreen = ({ navigation }) => {
     const [isLiked, setIsLiked] = useState(false);
@@ -9,36 +10,36 @@ const BuscarMatchScreen = ({ navigation }) => {
     };
 
     const handleDislikePress = () => {
-        // Aquí puedes manejar la lógica para el botón de dislike si es necesario
+        // Lógica para el botón de dislike
     };
 
     return (
         <View style={styles.container}>
-            <View style={styles.card}>
-                <ImageBackground
-                    source={{ uri: 'https://img.freepik.com/foto-gratis/perro-pug-aislado-fondo-blanco_2829-11416.jpg?t=st=1714069910~exp=1714073510~hmac=2f36779f3ddcb32de5feab6e4dfca69c3eabc1baeb06d61b77b6963981831118&w=826' }}
-                    style={styles.imageBackground}
-                    resizeMode="cover"
-                >
-                    <View style={styles.overlay}>
-                        <Text style={styles.name}>Miguel</Text>
-                        <Text style={styles.age}>Edad: 100 años</Text>
-                    </View>
-                </ImageBackground>
-            </View>
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                    style={[styles.button, styles.dislikeButton]}
-                    onPress={handleDislikePress}
-                >
-                    <Text style={styles.buttonText}>X</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.button, isLiked ? styles.likedButton : styles.likeButton]}
-                    onPress={handleLikePress}
-                >
-                    <Text style={styles.buttonText}>♥</Text>
-                </TouchableOpacity>
+            <ImageBackground
+                source={{ uri: 'https://img.freepik.com/foto-gratis/perro-pug-aislado-fondo-blanco_2829-11416.jpg?t=st=1714069910~exp=1714073510~hmac=2f36779f3ddcb32de5feab6e4dfca69c3eabc1baeb06d61b77b6963981831118&w=826' }}
+                style={styles.card}
+                resizeMode="cover"
+            >
+                {/* Contenedor de los botones de like y dislike */}
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        style={[styles.button, styles.dislikeButton]}
+                        onPress={handleDislikePress}
+                    >
+                        <Icon name="times" style={styles.icon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.button, isLiked ? styles.likedButton : styles.likeButton]}
+                        onPress={handleLikePress}
+                    >
+                        <Icon name="heart" style={styles.icon} />
+                    </TouchableOpacity>
+                </View>
+            </ImageBackground>
+            {/* Contenedor de texto para el nombre y la edad */}
+            <View style={styles.textContainer}>
+                <Text style={styles.name}>Miguel</Text>
+                <Text style={styles.age}>Edad: 100 años</Text>
             </View>
         </View>
     );
@@ -49,63 +50,81 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#ffffff', // Un fondo claro
     },
     card: {
-        borderRadius: 10,
+        width: '95%',
+        height: 600, // Tamaño grande para enfocar la atención en la imagen
+        borderRadius: 20, // Esquinas redondeadas pero no totalmente redondo
+        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20, // Espacio para separar la imagen del texto
+        backgroundColor: '#ffffff', // Fondo blanco para la tarjeta
+        elevation: 10, // Sombra para elevar la tarjeta
+        // Sombra para iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 2,
-        elevation: 5,
-        width: '90%',
-        aspectRatio: 0.6,
-        overflow: 'hidden',
-    },
-    imageBackground: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-end',
-    },
-    overlay: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        padding: 20,
-    },
-    name: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginBottom: 5,
-    },
-    age: {
-        fontSize: 16,
-        color: '#FFFFFF',
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
     buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 20,
-        width: '80%',
+        justifyContent: 'space-around',
+        width: '100%',
+        position: 'absolute',
+        bottom: 20,
     },
     button: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#fff', // Botones claros para contrastar con la imagen
+        // Sombra para elevar el botón
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
     },
     likeButton: {
-        backgroundColor: '#FFFFFF',
+        // Añade un borde para definir mejor el botón
+        borderWidth: 1,
+        borderColor: '#00C853', // Verde para el botón de like
     },
     likedButton: {
-        backgroundColor: 'red',
+        backgroundColor: '#00C853', // Verde para indicar que se dio like
     },
     dislikeButton: {
-        backgroundColor: '#FF5733',
+        // Añade un borde para definir mejor el botón
+        borderWidth: 1,
+        borderColor: '#DD2C00', // Rojo para el botón de dislike
     },
-    buttonText: {
+    icon: {
         fontSize: 24,
-        color: '#FFFFFF',
+        color: '#000', // Íconos oscuros para contraste
+    },
+    textContainer: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        alignItems: 'center', // Centra el texto horizontalmente
+        backgroundColor: '#f8f8f8', // Un ligero fondo gris para destacar el texto
+        width: '100%', // El texto se extiende a lo ancho
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    name: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        color: '#333', // Texto oscuro para facilitar la lectura
+    },
+    age: {
+        fontSize: 20,
+        color: '#555', // Un gris oscuro para la edad
     },
 });
+
 
 export default BuscarMatchScreen;
