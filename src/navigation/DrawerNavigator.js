@@ -36,7 +36,6 @@ const DrawerNavigator = () => {
             <Drawer.Screen name="Registro" component={RegistroScreen} />
             <Drawer.Screen name="Login" component={LoginScreen} />
             <Drawer.Screen name="VetChat" component={VetChatScreen} />
-            {/* Más Drawer.Screen según sea necesario */}
         </Drawer.Navigator>
     );
 };

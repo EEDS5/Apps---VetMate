@@ -30,14 +30,13 @@ const BottomTabNavigator = () => {
                         iconName = focused ? 'person' : 'person-outline';
                     }
 
-                    // Asegúrate de devolver el componente Ionicons con el nombre correcto
+                    // Devolver el componente Ionicons con el nombre correcto
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
                 tabBarActiveTintColor: activeTintColor,
                 tabBarInactiveTintColor: inactiveTintColor,
             })}
         >
-            {/* Cambia el nombre de la ruta pero usa el parámetro 'options' para mantener la etiqueta como 'Home' */}
             <Tab.Screen
                 name="HomeTab" // Nombre de ruta único
                 component={HomeScreen}
@@ -49,9 +48,9 @@ const BottomTabNavigator = () => {
             <Tab.Screen name="BuscarMatch" component={BuscarMatchScreen} />
             <Tab.Screen
                 name="PerfilTab"
-                component={ProfileStackNavigator} // Usa el ProfileStackNavigator aquí
+                component={ProfileStackNavigator} 
                 options={{
-                    tabBarLabel: 'Perfil', // Asegúrate de que la etiqueta es coherente
+                    tabBarLabel: 'Perfil', 
                     headerShown: false,
                 }}
             />
