@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import auth from '@react-native-firebase/auth';
 
 const RegistroScreen = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -15,35 +16,21 @@ const RegistroScreen = ({ navigation }) => {
             alert('Por favor, introduce un correo electrónico válido.');
             return;
         }
-        // Asegúrate de que la contraseña tenga una longitud mínima, por ejemplo, 6 caracteres
         if (password.length < 6) {
             alert('La contraseña debe tener al menos 6 caracteres.');
             return;
         }
-        // Simulando una llamada al backend
-        fetch('https://tuapi.com/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name, email, password }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Lógica para manejar la respuesta exitosa
-                console.log('Registro exitoso');
-            } else {
-                throw new Error(data.message || 'Error al registrarse');
-            }
-        })
-        .catch(error => {
-            alert(error.message);
-        });
-    };
-    ;
 
-    
+        auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                console.log('Registro exitoso', userCredential);
+                // Aquí puedes redirigir al usuario o manejar la lógica post-registro
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+    };
+
 
     return (
         <View style={styles.container}>
