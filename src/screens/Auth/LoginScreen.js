@@ -14,7 +14,7 @@ const LoginScreen = ({ navigation }) => {
             alert('Por favor, introduce un correo electrónico válido.');
             return;
         }
-        // Aquí iría la lógica para conectar con tu backend y verificar las credenciales
+        // Aquí iría la lógica para conectar con el backend y verificar las credenciales
         // Simulando una llamada al backend
         fetch('https://tuapi.com/login', {
             method: 'POST',
