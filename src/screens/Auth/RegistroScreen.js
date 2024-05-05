@@ -1,53 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import auth from '@react-native-firebase/auth';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { firebaseConfig } from '../../../firebaseConfig';  // Asegúrate de que la ruta es correcta
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const RegistroScreen = ({ navigation }) => {
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleSignUp = () => {
-        if (!name || !email || !password) {
-            alert('Por favor, completa todos los campos.');
-            return;
-        }
-        if (!email.includes('@')) {
-            alert('Por favor, introduce un correo electrónico válido.');
-            return;
-        }
-        if (password.length < 6) {
-            alert('La contraseña debe tener al menos 6 caracteres.');
-            return;
-        }
-
-        auth().createUserWithEmailAndPassword(email, password)
+        console.log('Registrando usuario...');
+        createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                console.log('Registro exitoso', userCredential);
-                // Aquí puedes redirigir al usuario o manejar la lógica post-registro
+                console.log('Usuario registrado:', userCredential.user);
+                navigation.navigate('Home'); // Cambia 'Home' por la pantalla a la que desees dirigir tras el registro
             })
-            .catch(error => {
+            .catch((error) => {
+                console.error('Error al registrar usuario:', error);
                 alert(error.message);
             });
     };
-
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Registro</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Nombre completo"
-                placeholderTextColor="#ccc"
-                value={name}
-                onChangeText={setName}
-            />
-            <TextInput
-                style={styles.input}
                 placeholder="Correo electrónico"
                 placeholderTextColor="#ccc"
                 value={email}
                 onChangeText={setEmail}
+                autoCapitalize="none"
             />
             <TextInput
                 style={styles.input}
@@ -56,14 +43,10 @@ const RegistroScreen = ({ navigation }) => {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                autoCapitalize="none"
             />
-            <Button
-                title="Registrarse"
-                onPress={handleSignUp}
-                color="#d32f2f"
-            />
-            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginButton}>
-                <Text style={styles.loginText}>¿Ya tienes cuenta? Inicia sesión</Text>
+            <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+                <Text style={styles.buttonText}>Registrarse</Text>
             </TouchableOpacity>
         </View>
     );
@@ -92,13 +75,16 @@ const styles = StyleSheet.create({
         borderColor: '#c62828',
         marginBottom: 10,
     },
-    loginButton: {
-        marginTop: 10,
-        paddingVertical: 10,
+    button: {
+        backgroundColor: '#d32f2f',
+        padding: 10,
+        borderRadius: 5,
+        width: '90%',
+        alignItems: 'center',
     },
-    loginText: {
-        color: '#c62828',
-        textDecorationLine: 'underline',
+    buttonText: {
+        color: '#fff',
+        fontSize: 18,
     }
 });
 
