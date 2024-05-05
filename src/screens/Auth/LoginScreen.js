@@ -1,48 +1,43 @@
-import React from 'react';
-import { View, Text, TextInput, Button, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, StatusBar, TouchableOpacity, Alert } from 'react-native';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { firebaseConfig } from '../../../firebaseConfig';
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const LoginScreen = ({ navigation }) => {
-    const [email, setEmail] = React.useState('');
-    const [password, setPassword] = React.useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
     const handleLogin = () => {
         if (!email || !password) {
-            alert('Por favor, completa todos los campos.');
+            Alert.alert('Por favor, completa todos los campos.');
             return;
         }
         if (!email.includes('@')) {
-            alert('Por favor, introduce un correo electrónico válido.');
+            Alert.alert('Por favor, introduce un correo electrónico válido.');
             return;
         }
-        // Aquí iría la lógica para conectar con el backend y verificar las credenciales
-        // Simulando una llamada al backend
-        fetch('https://tuapi.com/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Lógica para manejar la respuesta exitosa
-                console.log('Inicio de sesión exitoso');
-            } else {
-                throw new Error(data.message || 'Error al iniciar sesión');
-            }
-        })
-        .catch(error => {
-            alert(error.message);
-        });
-    };
-    
 
-    
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // Si el inicio de sesión es exitoso, puedes redirigir al usuario a la pantalla de inicio
+                console.log('Usuario autenticado:', userCredential.user);
+                navigation.navigate('Home'); // Cambia 'Home' por la pantalla a la que desees dirigir tras el inicio de sesión
+            })
+            .catch((error) => {
+                // Si hay un error durante el inicio de sesión, muestra un mensaje de error
+                console.error('Error en el inicio de sesión:', error.code, error.message);
+                Alert.alert('Error', 'Error en el inicio de sesión. Por favor, verifica tus credenciales.');
+            });
+    };
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content"  />
+            <StatusBar barStyle="light-content" />
             <Text style={styles.title}>Inicio de sesión</Text>
             <TextInput
                 style={styles.input}
@@ -50,6 +45,7 @@ const LoginScreen = ({ navigation }) => {
                 placeholderTextColor="#ccc"
                 value={email}
                 onChangeText={setEmail}
+                autoCapitalize="none"
             />
             <TextInput
                 style={styles.input}
@@ -58,6 +54,7 @@ const LoginScreen = ({ navigation }) => {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                autoCapitalize="none"
             />
             <Button
                 title="Iniciar sesión"
@@ -104,3 +101,4 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
+
