@@ -1,8 +1,24 @@
-//src/screens/HomeScreen.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, Platform } from 'react-native';
+import { getAuth, signOut } from 'firebase/auth'; // Asegúrate de tener estas funciones de Firebase
 
 const HomeScreen = ({ navigation }) => {
+  const [user, setUser] = useState(null);
+  const auth = getAuth();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(setUser);
+    return unsubscribe; // Limpia la suscripción al desmontar
+  }, []);
+
+  const handleSignOut = () => {
+    signOut(auth).then(() => {
+      console.log('Usuario cerró sesión');
+    }).catch((error) => {
+      console.error('Error al cerrar sesión:', error);
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Image
@@ -11,27 +27,33 @@ const HomeScreen = ({ navigation }) => {
       />
       <Text style={styles.title}>Bienvenido a VetMate</Text>
       <Text style={styles.subtitle}>Tu compañero ideal para encontrar la pareja perfecta para tu perro</Text>
-      <TouchableOpacity
-        style={[styles.button, styles.shadow]}
-        onPress={() => navigation.navigate('Registro')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, styles.shadow]}
-        onPress={() => navigation.navigate('Login')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>Iniciar Sesión</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, styles.shadow]}
-        onPress={() => navigation.navigate('BuscarMatch')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>Buscar Match</Text>
-      </TouchableOpacity>
+      
+      {!user ? (
+        <>
+          <TouchableOpacity
+            style={[styles.button, styles.shadow]}
+            onPress={() => navigation.navigate('Registro')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Registrarse</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.shadow]}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <TouchableOpacity
+          style={[styles.button, styles.shadow]}
+          onPress={handleSignOut}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
