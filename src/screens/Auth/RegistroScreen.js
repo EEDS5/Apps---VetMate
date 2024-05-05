@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { firebaseConfig } from '../../../firebaseConfig';  // Asegúrate de que la ruta es correcta
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from '../../firebase/firebase';  
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const RegistroScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
