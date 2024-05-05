@@ -2,25 +2,30 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 
 const VetChatScreen = () => {
-    const [messages, setMessages] = useState([]);
-    const [inputText, setInputText] = useState('');
+    // Estado para almacenar los mensajes y el texto de entrada
+    const [messages, setMessages] = useState([]);// Arreglo de mensajes
+    const [inputText, setInputText] = useState('');// Texto de entrada del usuario
 
+    // Función para manejar el envío de mensajes
     const handleSend = () => {
-        if (inputText.trim() !== '') {
+        if (inputText.trim() !== '') {// Verifica si el texto de entrada no está vacío
+            // Crea un nuevo mensaje con un ID único y una marca de tiempo
             const newMessage = {
                 id: messages.length + 1,
                 text: inputText,
                 timestamp: new Date().getTime(),
             };
 
+            // Actualiza el estado de los mensajes agregando el nuevo mensaje
             setMessages(prevMessages => [...prevMessages, newMessage]);
+            // Limpia el texto de entrada
             setInputText('');
         }
     };
 
     const formatTime = timestamp => {
         const date = new Date(timestamp);
-        return `${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`;  // Padded minutes for formatting
+        return `${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`; 
     };
 
     return (
