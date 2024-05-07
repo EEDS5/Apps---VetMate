@@ -1,6 +1,6 @@
-// src/navigation/DrawerNavigator.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import BottomTabNavigator from './BottomTabNavigator';
 import RegistroScreen from '../screens/Auth/RegistroScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
@@ -8,34 +8,43 @@ import VetChatScreen from '../screens/Match/VetChatScreen';
 
 const Drawer = createDrawerNavigator();
 
-// La función getHeaderTitle permite establecer un título dinámico en base a la ruta actual
 const getHeaderTitle = (route) => {
-    // Obtienes el nombre de la ruta activa
     const routeName = route.state?.routes[route.state.index]?.name ?? route.params?.screen ?? 'Home';
-
-    // Si la ruta activa es 'Home', devuelve una cadena vacía, de lo contrario devuelve el nombre de la ruta
     return routeName === 'Home' ? '' : routeName;
 };
 
 const DrawerNavigator = () => {
+    const [user, setUser] = useState(null);
+    const auth = getAuth();
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, setUser);
+        return unsubscribe; // Limpia la suscripción al desmontar
+    }, []);
+
     return (
         <Drawer.Navigator
             screenOptions={{
-                headerTitle: getHeaderTitle, // Título dinámico para el encabezado
-                drawerActiveTintColor: '#d32f2f', // Color del texto para el elemento activo
-                drawerInactiveTintColor: 'gray', // Color del texto para los elementos inactivos
-                drawerActiveBackgroundColor: '#ffebee', // Un color de fondo suave para el elemento activo que complementa el esquema de colores
-                drawerInactiveBackgroundColor: 'transparent', // Mantenemos los elementos inactivos transparentes
-                itemStyle: { marginVertical: 5 }, // Estilo para cada elemento
+                headerTitle: getHeaderTitle,
+                drawerActiveTintColor: '#d32f2f',
+                drawerInactiveTintColor: 'gray',
+                drawerActiveBackgroundColor: '#ffebee',
+                drawerInactiveBackgroundColor: 'transparent',
+                itemStyle: { marginVertical: 5 },
             }}
         >
             <Drawer.Screen
                 name="Home"
                 component={BottomTabNavigator}
             />
-            <Drawer.Screen name="Registro" component={RegistroScreen} />
-            <Drawer.Screen name="Login" component={LoginScreen} />
-            <Drawer.Screen name="VetChat" component={VetChatScreen} />
+            {!user ? (
+                <>
+                    <Drawer.Screen name="Registro" component={RegistroScreen} />
+                    <Drawer.Screen name="Login" component={LoginScreen} />
+                </>
+            ) : (
+                <Drawer.Screen name="VetChatGPT" component={VetChatScreen} />
+            )}
         </Drawer.Navigator>
     );
 };

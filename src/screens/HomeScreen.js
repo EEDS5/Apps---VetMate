@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, Platform } from 'react-native';
-import { getAuth, signOut } from 'firebase/auth'; // Asegúrate de tener estas funciones de Firebase
+import { getAuth, signOut } from 'firebase/auth'; 
 
 const HomeScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
