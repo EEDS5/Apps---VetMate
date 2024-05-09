@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "99550247141",
+    "project_id": "vetmate-498d0",
+    "storage_bucket": "vetmate-498d0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99550247141:android:f3f67a6e684792ca4abc0c",
+        "android_client_info": {
+          "package_name": "com.vetmate.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "99550247141-1pqrcnb2jr850l6ot3aae7vgvot0609c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsIX8-OtMSCAVn7N6EGH8mUxEmxr8N0dc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "99550247141-1pqrcnb2jr850l6ot3aae7vgvot0609c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -18,13 +18,21 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.vetmate.app",
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "46e11ed7-3c65-4c7d-8187-d5ce1582d0de"
+      }
     }
   }
 }

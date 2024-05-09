@@ -1,3 +1,4 @@
+//src/screens/Auth/LoginScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, StatusBar, TouchableOpacity, Alert } from 'react-native';
 import { auth } from '../../firebase/firebase';  
