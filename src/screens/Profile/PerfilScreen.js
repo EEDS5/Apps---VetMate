@@ -1,12 +1,14 @@
-//src/screens/Profile/PerfilScreen.js
 import React, { useContext, useEffect, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { getAuth, signOut } from 'firebase/auth';
 import { UserContext } from '../../context/UserContext/UserContext';
 import { loadUserProfile } from '../../services/storage/storageService';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 
 const PerfilScreen = ({ navigation }) => {
   const { userProfile, dispatch } = useContext(UserContext);
   const [profileImage, setProfileImage] = useState(null);
+
+  const auth = getAuth();
 
   useEffect(() => {
     const loadImage = async () => {
@@ -16,13 +18,25 @@ const PerfilScreen = ({ navigation }) => {
       }
     };
 
+    // Remover esta parte si no necesitas manejar el estado de autenticación aquí
+    // const unsubscribe = auth.onAuthStateChanged(setUser); 
+    // return unsubscribe; // Limpia la suscripción al desmontar
+
     loadImage();
   }, [userProfile]);
+
+  const handleSignOut = () => {
+    signOut(auth).then(() => {
+      console.log('Usuario cerró sesión');
+    }).catch((error) => {
+      console.error('Error al cerrar sesión:', error);
+    });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Image
-        source={profileImage || require('../../../assets/img/profileImage.jpg')} 
+        source={profileImage || require('../../../assets/img/profileImage.jpg')}
         style={styles.profileImage}
       />
       <Text style={styles.title}>Perfil del Usuario</Text>
@@ -58,9 +72,20 @@ const PerfilScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>Editar Mascota</Text>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={[styles.button, styles.shadow]}
+          onPress={handleSignOut}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
     container: {
@@ -69,6 +94,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
+    button: {
+      backgroundColor: '#d32f2f',
+      paddingVertical: 12,
+      paddingHorizontal: 36,
+      borderRadius: 25,
+      marginVertical: 8,
+      minWidth: 250,
+      alignItems: 'center',
+    },
+    
     profileImage: {
         width: 120,
         height: 120,
