@@ -1,45 +1,49 @@
-// src/screens/Profile/EditarMascotaScreen.js
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import * as MediaLibrary from 'expo-media-library';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { firestore, storage } from '../../firebase/firebase'; 
+import { collection, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const EditarMascotaScreen = ({ navigation }) => {
+const CrearMascotaScreen = ({ navigation }) => {
     const [hasPermission, setHasPermission] = useState(null);
-    const [nombreMascota, setNombreMascota] = useState('Tiranosaurio Rex');
-    const [raza, setRaza] = useState('Labrador Retriever');
-    const [image, setImage] = useState(null);
+    const [nombreMascota, setNombreMascota] = useState('');
+    const [raza, setRaza] = useState('');
+    const [sexo, setSexo] = useState('macho');
+    const [edad, setEdad] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
 
     useEffect(() => {
         (async () => {
             const cameraStatus = await Camera.requestCameraPermissionsAsync();
             const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
             if (cameraStatus.status !== 'granted' || galleryStatus.status !== 'granted') {
                 console.log('Permiso de cámara o galería no concedido');
             }
-    
+
             setHasPermission(cameraStatus.status === 'granted' && galleryStatus.status === 'granted');
         })();
     }, []);
 
-    const saveFile = async (fileUri) => {
-        if (typeof fileUri !== 'string') {
-            console.log("URI del archivo no válida: ", fileUri);
-            return;
-        }
-    
+    const handleImageUpload = async (uri) => {
+        console.log("Iniciando la subida de la imagen:", uri);
         try {
-            const asset = await MediaLibrary.createAssetAsync(fileUri);
-            let album = await MediaLibrary.getAlbumAsync('VetMate');
-            if (album === null) {
-                album = await MediaLibrary.createAlbumAsync('VetMate', asset, false);
-            } else {
-                await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+            const response = await fetch(uri);
+            console.log("Respuesta de fetch:", response);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+            const blob = await response.blob();
+            const storageRef = ref(storage, `images/${Date.now()}_${uri.split('/').pop()}`);
+            await uploadBytes(storageRef, blob);
+            const url = await getDownloadURL(storageRef);
+            console.log("Imagen subida con éxito, URL:", url);
+            setImageUrl(url);
         } catch (error) {
-            console.log("Error al guardar el archivo: ", error);
+            console.log("Error al subir la imagen:", error);
         }
     };
 
@@ -50,23 +54,19 @@ const EditarMascotaScreen = ({ navigation }) => {
                 aspect: [4, 3],
                 quality: 1,
             });
-    
-            if (result.error) {
-                console.log('Error de ImagePicker:', result.error);
-                return;
-            }
-    
-            console.log(result);
-    
-            if (!result.cancelled && result.uri) {
-                setImage(result.uri);
-                await saveFile(result.uri);
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const uri = result.assets[0].uri;
+                console.log("Imagen tomada:", uri);
+                await handleImageUpload(uri);
+            } else {
+                console.log("La toma de la imagen fue cancelada");
             }
         } catch (error) {
-            console.log("Error al tomar la foto: ", error);
+            console.log("Error al tomar la foto:", error);
         }
     };
-    
+
     const pickImage = async () => {
         try {
             let result = await ImagePicker.launchImageLibraryAsync({
@@ -75,18 +75,56 @@ const EditarMascotaScreen = ({ navigation }) => {
                 aspect: [4, 3],
                 quality: 1,
             });
-    
-            if (result.error) {
-                console.log('Error de ImagePicker:', result.error);
-                return;
-            }
-    
-            if (!result.cancelled && result.uri) {
-                setImage(result.uri);
-                await saveFile(result.uri);
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const uri = result.assets[0].uri;
+                console.log("Imagen seleccionada:", uri);
+                await handleImageUpload(uri);
+            } else {
+                console.log("La selección de la imagen fue cancelada");
             }
         } catch (error) {
-            console.log("Error al seleccionar la imagen: ", error);
+            console.log("Error al seleccionar la imagen:", error);
+        }
+    };
+
+    const savePetProfile = async () => {
+        if (!nombreMascota) {
+            console.log("Error: El nombre de la mascota está vacío.");
+            return;
+        }
+        if (!raza) {
+            console.log("Error: La raza de la mascota está vacía.");
+            return;
+        }
+        if (!sexo) {
+            console.log("Error: El sexo de la mascota está vacío.");
+            return;
+        }
+        if (!edad) {
+            console.log("Error: La edad de la mascota está vacía.");
+            return;
+        }
+        if (!imageUrl) {
+            console.log("Error: No se ha seleccionado una imagen para la mascota.");
+            return;
+        }
+
+        try {
+            const petData = {
+                name: nombreMascota,
+                breed: raza,
+                gender: sexo,
+                age: edad,
+                imageUrl: imageUrl,
+            };
+
+            await addDoc(collection(firestore, 'Dogs'), petData);
+
+            console.log("Mascota guardada con éxito.");
+            navigation.goBack();
+        } catch (error) {
+            console.error("Error al guardar los datos de la mascota:", error);
         }
     };
 
@@ -100,8 +138,8 @@ const EditarMascotaScreen = ({ navigation }) => {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Editar Mascota</Text>
-            {image && <Image source={{ uri: image }} style={styles.petImage} />}
+            <Text style={styles.title}>Crear Mascota</Text>
+            {imageUrl && <Image source={{ uri: imageUrl }} style={styles.petImage} />}
             <View style={styles.section}>
                 <Text style={styles.label}>Nombre del Perro:</Text>
                 <TextInput
@@ -115,6 +153,22 @@ const EditarMascotaScreen = ({ navigation }) => {
                     value={raza}
                     onChangeText={setRaza}
                 />
+                <Text style={styles.label}>Sexo:</Text>
+                <Picker
+                    selectedValue={sexo}
+                    style={styles.input}
+                    onValueChange={(itemValue) => setSexo(itemValue)}
+                >
+                    <Picker.Item label="Macho" value="macho" />
+                    <Picker.Item label="Hembra" value="hembra" />
+                </Picker>
+                <Text style={styles.label}>Edad (años/meses):</Text>
+                <TextInput
+                    style={styles.input}
+                    value={edad}
+                    onChangeText={setEdad}
+                    keyboardType="numeric"
+                />
                 <TouchableOpacity style={styles.button} onPress={takePicture}>
                     <Text style={styles.buttonText}>Tomar Foto</Text>
                 </TouchableOpacity>
@@ -123,9 +177,9 @@ const EditarMascotaScreen = ({ navigation }) => {
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.saveButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={savePetProfile}
                 >
-                    <Text style={styles.buttonText}>Guardar Cambios</Text>
+                    <Text style={styles.buttonText}>Crear Mascota</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
@@ -142,7 +196,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#d32f2f', // Color del título acorde al logotipo
+        color: '#d32f2f',
         marginBottom: 10,
     },
     section: {
@@ -195,4 +249,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default EditarMascotaScreen;
+export default CrearMascotaScreen;
