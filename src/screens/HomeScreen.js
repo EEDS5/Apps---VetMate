@@ -1,3 +1,4 @@
+//src/screens/HomeScreen.js
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, Platform } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; 
