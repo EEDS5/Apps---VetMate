@@ -1,66 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { firestore, storage } from '../../firebase/firebase'; 
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const CrearMascotaScreen = ({ navigation }) => {
+const EditarMascotaScreen = ({ navigation }) => {
     const [hasPermission, setHasPermission] = useState(null);
     const [nombreMascota, setNombreMascota] = useState('');
     const [raza, setRaza] = useState('');
     const [sexo, setSexo] = useState('macho');
-    const [edad, setEdad] = useState('');
+    const [edadAnos, setEdadAnos] = useState('');
+    const [edadMeses, setEdadMeses] = useState('');
     const [imageUrl, setImageUrl] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         (async () => {
             const cameraStatus = await Camera.requestCameraPermissionsAsync();
             const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-            if (cameraStatus.status !== 'granted' || galleryStatus.status !== 'granted') {
-                console.log('Permiso de cámara o galería no concedido');
-            }
-
             setHasPermission(cameraStatus.status === 'granted' && galleryStatus.status === 'granted');
         })();
     }, []);
 
     const handleImageUpload = async (uri) => {
-        console.log("Iniciando la subida de la imagen:", uri);
+        setIsLoading(true);
         try {
             const response = await fetch(uri);
-            console.log("Respuesta de fetch:", response);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
             const blob = await response.blob();
-            const storageRef = ref(storage, `images/${Date.now()}_${uri.split('/').pop()}`);
+            const fileName = `${Date.now()}_image.jpg`;
+            const storageRef = ref(storage, `images/${fileName}`);
             await uploadBytes(storageRef, blob);
             const url = await getDownloadURL(storageRef);
-            console.log("Imagen subida con éxito, URL:", url);
             setImageUrl(url);
         } catch (error) {
             console.log("Error al subir la imagen:", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const takePicture = async () => {
         try {
             let result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsEditing: false,
                 quality: 1,
             });
 
-            if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (!result.canceled && result.assets) {
                 const uri = result.assets[0].uri;
-                console.log("Imagen tomada:", uri);
                 await handleImageUpload(uri);
-            } else {
-                console.log("La toma de la imagen fue cancelada");
             }
         } catch (error) {
             console.log("Error al tomar la foto:", error);
@@ -71,17 +62,13 @@ const CrearMascotaScreen = ({ navigation }) => {
         try {
             let result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsEditing: false,
                 quality: 1,
             });
 
-            if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (!result.canceled && result.assets) {
                 const uri = result.assets[0].uri;
-                console.log("Imagen seleccionada:", uri);
                 await handleImageUpload(uri);
-            } else {
-                console.log("La selección de la imagen fue cancelada");
             }
         } catch (error) {
             console.log("Error al seleccionar la imagen:", error);
@@ -89,42 +76,29 @@ const CrearMascotaScreen = ({ navigation }) => {
     };
 
     const savePetProfile = async () => {
-        if (!nombreMascota) {
-            console.log("Error: El nombre de la mascota está vacío.");
-            return;
-        }
-        if (!raza) {
-            console.log("Error: La raza de la mascota está vacía.");
-            return;
-        }
-        if (!sexo) {
-            console.log("Error: El sexo de la mascota está vacío.");
-            return;
-        }
-        if (!edad) {
-            console.log("Error: La edad de la mascota está vacía.");
-            return;
-        }
-        if (!imageUrl) {
-            console.log("Error: No se ha seleccionado una imagen para la mascota.");
+        if (!nombreMascota || !raza || !sexo || (!edadAnos && !edadMeses) || !imageUrl) {
+            alert("Error: Todos los campos son obligatorios.");
             return;
         }
 
+        setIsLoading(true);
         try {
             const petData = {
                 name: nombreMascota,
                 breed: raza,
                 gender: sexo,
-                age: edad,
+                ageYears: edadAnos,
+                ageMonths: edadMeses,
                 imageUrl: imageUrl,
             };
 
             await addDoc(collection(firestore, 'Dogs'), petData);
-
-            console.log("Mascota guardada con éxito.");
+            alert("Mascota guardada con éxito.");
             navigation.goBack();
         } catch (error) {
-            console.error("Error al guardar los datos de la mascota:", error);
+            alert("Error al guardar los datos de la mascota:", error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -162,13 +136,26 @@ const CrearMascotaScreen = ({ navigation }) => {
                     <Picker.Item label="Macho" value="macho" />
                     <Picker.Item label="Hembra" value="hembra" />
                 </Picker>
-                <Text style={styles.label}>Edad (años/meses):</Text>
-                <TextInput
-                    style={styles.input}
-                    value={edad}
-                    onChangeText={setEdad}
-                    keyboardType="numeric"
-                />
+                <View style={styles.ageSection}>
+                    <View style={styles.ageInputContainer}>
+                        <Text style={styles.label}>Edad (años):</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={edadAnos}
+                            onChangeText={setEdadAnos}
+                            keyboardType="numeric"
+                        />
+                    </View>
+                    <View style={styles.ageInputContainer}>
+                        <Text style={styles.label}>Edad (meses):</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={edadMeses}
+                            onChangeText={setEdadMeses}
+                            keyboardType="numeric"
+                        />
+                    </View>
+                </View>
                 <TouchableOpacity style={styles.button} onPress={takePicture}>
                     <Text style={styles.buttonText}>Tomar Foto</Text>
                 </TouchableOpacity>
@@ -178,9 +165,11 @@ const CrearMascotaScreen = ({ navigation }) => {
                 <TouchableOpacity
                     style={styles.saveButton}
                     onPress={savePetProfile}
+                    disabled={isLoading}
                 >
-                    <Text style={styles.buttonText}>Crear Mascota</Text>
+                    <Text style={styles.buttonText}>Guardar Mascota</Text>
                 </TouchableOpacity>
+                {isLoading && <ActivityIndicator size="large" color="#d32f2f" />}
             </View>
         </ScrollView>
     );
@@ -192,44 +181,59 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        backgroundColor: '#f0f0f0',
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#d32f2f',
-        marginBottom: 10,
+        marginBottom: 20,
     },
     section: {
         width: '100%',
-        padding: 10,
+        padding: 15,
         marginBottom: 20,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#fff',
         borderRadius: 10,
+        elevation: 3,
     },
     label: {
-        fontSize: 16,
+        fontSize: 18,
         color: '#333',
-        marginBottom: 5,
+        marginBottom: 10,
+        fontWeight: '500',
     },
     input: {
         fontSize: 16,
-        backgroundColor: '#fff',
-        padding: 10,
-        marginBottom: 10,
+        backgroundColor: '#e0e0e0',
+        padding: 12,
+        marginBottom: 15,
         borderRadius: 5,
+        borderColor: '#ccc',
+        borderWidth: 1,
+    },
+    ageSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    ageInputContainer: {
+        flex: 1,
+        marginRight: 10,
     },
     button: {
         backgroundColor: '#d32f2f',
-        padding: 10,
+        padding: 15,
         borderRadius: 5,
         alignItems: 'center',
         marginVertical: 10,
+        elevation: 2,
     },
     saveButton: {
-        backgroundColor: '#d32f2f',
-        padding: 10,
+        backgroundColor: '#388e3c',
+        padding: 15,
         borderRadius: 5,
         alignItems: 'center',
+        elevation: 2,
     },
     buttonText: {
         color: '#fff',
@@ -241,6 +245,8 @@ const styles = StyleSheet.create({
         height: 200,
         borderRadius: 100,
         marginBottom: 20,
+        borderColor: '#d32f2f',
+        borderWidth: 2,
     },
     centered: {
         flex: 1,
@@ -249,4 +255,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default CrearMascotaScreen;
+export default EditarMascotaScreen;

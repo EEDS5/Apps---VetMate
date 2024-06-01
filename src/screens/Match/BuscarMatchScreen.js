@@ -1,44 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import MatchCard from '../../services/api/matchApi';
-import firestore from '@react-native-firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { collection, getDocs } from 'firebase/firestore';
+import { firestore } from '../../firebase/firebase';
+import MatchApi from '../../services/api/matchApi';
 
-const BuscarMatchScreen = ({ navigation }) => {
-    const [dog, setDog] = useState(null);
+// src/screens/Match/BuscarMatchScreen.js
+
+const BuscarMatchScreen = () => {
+    const [dogs, setDogs] = useState([]);
 
     useEffect(() => {
-        const loadDogData = async () => {
+        const fetchDogs = async () => {
             try {
-                const querySnapshot = await firestore().collection('Dogs').limit(1).get();
-                if (!querySnapshot.empty) {
-                    const docData = querySnapshot.docs[0].data();
-                    setDog(docData);
-                } else {
-                    console.error("No dogs found");
-                    // Puedes establecer algún estado para mostrar un mensaje específico si no se encuentran perros
-                }
+                const querySnapshot = await getDocs(collection(firestore, 'Dogs'));
+                const dogsList = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setDogs(dogsList);
             } catch (error) {
-                console.error("Failed to fetch dog data:", error);
-                // Manejar el error adecuadamente aquí
+                console.error("Error al obtener los datos de los perros:", error);
             }
         };
-    
-        loadDogData();
-    }, []);
-    
 
-    if (!dog) {
-        return <Text>Cargando...</Text>; // Mostrar algo mientras los datos se cargan
-    }
+        fetchDogs();
+    }, []);
+
+    const handleLike = (id) => {
+        console.log("Liked dog with id:", id);
+        // Implementar lógica adicional para manejar el "like"
+    };
+
+    const handleDislike = (id) => {
+        console.log("Disliked dog with id:", id);
+        // Implementar lógica adicional para manejar el "dislike"
+    };
 
     return (
         <View style={styles.container}>
-            <MatchCard
-                name={dog.name}
-                age={dog.age}
-                gender={dog.gender}
-                imageUrl={dog.imageUrl}
-            />
+            <Text style={styles.title}>Buscar Match</Text>
+            <ScrollView contentContainerStyle={styles.scrollView}>
+                {dogs.map((dog) => (
+                    <MatchApi key={dog.id} dog={dog} onLike={handleLike} onDislike={handleDislike} />
+                ))}
+            </ScrollView>
         </View>
     );
 };
@@ -46,6 +51,17 @@ const BuscarMatchScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#f0f0f0',
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#d32f2f',
+        textAlign: 'center',
+        marginVertical: 20,
+    },
+    scrollView: {
+        padding: 10,
     },
 });
 
