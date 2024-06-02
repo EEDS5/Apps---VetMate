@@ -1,11 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Modal, FlatList } from 'react-native';
 import { firestore, storage } from '../../firebase/firebase'; 
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+const dogBreeds = [
+    "Akita Inu",
+    "Beagle",
+    "Border Collie",
+    "Boxer",
+    "Bulldog",
+    "Chihuahua",
+    "Cocker Spaniel",
+    "Dachshund",
+    "Doberman",
+    "English Bulldog",
+    "French Bulldog",
+    "German Shepherd",
+    "Golden Retriever",
+    "Jack Russell Terrier",
+    "Labrador Retriever",
+    "Maltese",
+    "Poodle",
+    "Pug",
+    "Rottweiler",
+    "Shih Tzu",
+    "Siberian Husky",
+    "Schnauzer",
+    "Pit Bull",
+    "American Cocker Spaniel",
+    "Yorkshire Terrier"
+    // Agrega más razas de perros según sea necesario
+];
+
 
 const EditarMascotaScreen = ({ navigation }) => {
     const [hasPermission, setHasPermission] = useState(null);
@@ -16,6 +45,7 @@ const EditarMascotaScreen = ({ navigation }) => {
     const [edadMeses, setEdadMeses] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [breedModalVisible, setBreedModalVisible] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -111,67 +141,110 @@ const EditarMascotaScreen = ({ navigation }) => {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Crear Mascota</Text>
-            {imageUrl && <Image source={{ uri: imageUrl }} style={styles.petImage} />}
-            <View style={styles.section}>
-                <Text style={styles.label}>Nombre del Perro:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={nombreMascota}
-                    onChangeText={setNombreMascota}
-                />
-                <Text style={styles.label}>Raza:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={raza}
-                    onChangeText={setRaza}
-                />
-                <Text style={styles.label}>Sexo:</Text>
-                <Picker
-                    selectedValue={sexo}
-                    style={styles.input}
-                    onValueChange={(itemValue) => setSexo(itemValue)}
-                >
-                    <Picker.Item label="Macho" value="macho" />
-                    <Picker.Item label="Hembra" value="hembra" />
-                </Picker>
-                <View style={styles.ageSection}>
-                    <View style={styles.ageInputContainer}>
-                        <Text style={styles.label}>Edad (años):</Text>
+        <FlatList
+            ListHeaderComponent={
+                <View style={styles.container}>
+                    <Text style={styles.title}>Crear Mascota</Text>
+                    {imageUrl && <Image source={{ uri: imageUrl }} style={styles.petImage} />}
+                    <View style={styles.section}>
+                        <Text style={styles.label}>Nombre del Perro:</Text>
                         <TextInput
                             style={styles.input}
-                            value={edadAnos}
-                            onChangeText={setEdadAnos}
-                            keyboardType="numeric"
+                            value={nombreMascota}
+                            onChangeText={setNombreMascota}
                         />
+                        <Text style={styles.label}>Raza:</Text>
+                        <TouchableOpacity onPress={() => setBreedModalVisible(true)} style={styles.breedButton}>
+                            <Text style={styles.breedButtonText}>{raza || "Seleccionar Raza"}</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.label}>Sexo:</Text>
+                        <View style={styles.pickerContainer}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.pickerButton,
+                                    sexo === 'macho' ? styles.pickerButtonSelected : {},
+                                ]}
+                                onPress={() => setSexo('macho')}
+                            >
+                                <Text style={styles.pickerButtonText}>Macho</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.pickerButton,
+                                    sexo === 'hembra' ? styles.pickerButtonSelected : {},
+                                ]}
+                                onPress={() => setSexo('hembra')}
+                            >
+                                <Text style={styles.pickerButtonText}>Hembra</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.ageSection}>
+                            <View style={styles.ageInputContainer}>
+                                <Text style={styles.label}>Edad (años):</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={edadAnos}
+                                    onChangeText={setEdadAnos}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+                            <View style={styles.ageInputContainer}>
+                                <Text style={styles.label}>Edad (meses):</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={edadMeses}
+                                    onChangeText={setEdadMeses}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+                        </View>
+                        <TouchableOpacity style={styles.button} onPress={takePicture}>
+                            <Text style={styles.buttonText}>Tomar Foto</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.button} onPress={pickImage}>
+                            <Text style={styles.buttonText}>Seleccionar de Galería</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.saveButton}
+                            onPress={savePetProfile}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.buttonText}>Guardar Mascota</Text>
+                        </TouchableOpacity>
+                        {isLoading && <ActivityIndicator size="large" color="#d32f2f" />}
                     </View>
-                    <View style={styles.ageInputContainer}>
-                        <Text style={styles.label}>Edad (meses):</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={edadMeses}
-                            onChangeText={setEdadMeses}
-                            keyboardType="numeric"
-                        />
-                    </View>
+                    <Modal visible={breedModalVisible} animationType="slide">
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Seleccionar Raza</Text>
+                            <FlatList
+                                data={dogBreeds}
+                                keyExtractor={(item, index) => index.toString()}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={styles.breedOption}
+                                        onPress={() => {
+                                            setRaza(item);
+                                            setBreedModalVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.breedName}>{item}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                            <TouchableOpacity
+                                style={styles.modalCloseButton}
+                                onPress={() => setBreedModalVisible(false)}
+                            >
+                                <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Modal>
                 </View>
-                <TouchableOpacity style={styles.button} onPress={takePicture}>
-                    <Text style={styles.buttonText}>Tomar Foto</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={pickImage}>
-                    <Text style={styles.buttonText}>Seleccionar de Galería</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.saveButton}
-                    onPress={savePetProfile}
-                    disabled={isLoading}
-                >
-                    <Text style={styles.buttonText}>Guardar Mascota</Text>
-                </TouchableOpacity>
-                {isLoading && <ActivityIndicator size="large" color="#d32f2f" />}
-            </View>
-        </ScrollView>
+            }
+            data={[]}
+            renderItem={null}
+            keyExtractor={(item, index) => index.toString()}
+        />
     );
 };
 
@@ -211,6 +284,19 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         borderColor: '#ccc',
         borderWidth: 1,
+    },
+    breedButton: {
+        backgroundColor: '#e0e0e0',
+        padding: 12,
+        marginBottom: 15,
+        borderRadius: 5,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        alignItems: 'center',
+    },
+    breedButtonText: {
+        fontSize: 16,
+        color: '#333',
     },
     ageSection: {
         flexDirection: 'row',
@@ -253,6 +339,62 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    pickerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 15,
+    },
+    pickerButton: {
+        flex: 1,
+        padding: 12,
+        alignItems: 'center',
+        borderRadius: 5,
+        marginHorizontal: 5,
+        backgroundColor: '#e0e0e0',
+    },
+    pickerButtonSelected: {
+        backgroundColor: '#d32f2f',
+    },
+    pickerButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    modalContainer: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#d32f2f',
+    },
+    breedOption: {
+        padding: 10,
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+        width: '100%',
+        alignItems: 'center',
+    },
+    breedName: {
+        fontSize: 18,
+        color: '#333',
+    },
+    modalCloseButton: {
+        marginTop: 20,
+        backgroundColor: '#d32f2f',
+        padding: 10,
+        borderRadius: 5,
+    },
+    modalCloseButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    }
 });
 
 export default EditarMascotaScreen;

@@ -18,10 +18,6 @@ const PerfilScreen = ({ navigation }) => {
       }
     };
 
-    // Remover esta parte si no necesitas manejar el estado de autenticación aquí
-    // const unsubscribe = auth.onAuthStateChanged(setUser); 
-    // return unsubscribe; // Limpia la suscripción al desmontar
-
     loadImage();
   }, [userProfile]);
 
@@ -56,20 +52,11 @@ const PerfilScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mascotas</Text>
-        <View style={styles.petDetailsContainer}>
-          <View style={styles.petDetails}>
-            <Text style={styles.detailLabel}>Nombre del Perro:</Text>
-            <Text style={styles.detailText}>{userProfile.dog.name}</Text>
-            <Text style={styles.detailLabel}>Raza:</Text>
-            <Text style={styles.detailText}>{userProfile.dog.breed}</Text>
-          </View>
-        </View>
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => navigation.navigate('EditarMascota', { petId: userProfile.dog.id })}
         >
-          <Text style={styles.buttonText}>Editar Mascota</Text>
+          <Text style={styles.buttonText}>Crear Mascota</Text>
         </TouchableOpacity>
       </View>
 
@@ -85,7 +72,6 @@ const PerfilScreen = ({ navigation }) => {
     </ScrollView>
   );
 };
-
 
 const styles = StyleSheet.create({
     container: {
@@ -103,17 +89,11 @@ const styles = StyleSheet.create({
       minWidth: 250,
       alignItems: 'center',
     },
-    
     profileImage: {
         width: 120,
         height: 120,
         borderRadius: 60,
         marginBottom: 20,
-    },
-    petImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
     },
     title: {
         fontSize: 24,
