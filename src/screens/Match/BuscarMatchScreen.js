@@ -1,10 +1,9 @@
+// src/screens/Match/BuscarMatchScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
 import { firestore } from '../../firebase/firebase';
 import MatchApi from '../../services/api/matchApi';
-
-// src/screens/Match/BuscarMatchScreen.js
 
 const BuscarMatchScreen = () => {
     const [dogs, setDogs] = useState([]);
