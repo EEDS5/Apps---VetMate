@@ -33,17 +33,18 @@ const HomeScreen = ({ navigation }) => {
         <>
           <TouchableOpacity
             style={[styles.button, styles.shadow]}
-            onPress={() => navigation.navigate('Registro')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonText}>Registrarse</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.shadow]}
             onPress={() => navigation.navigate('Login')}
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.shadow]}
+            onPress={() => navigation.navigate('Registro')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Registrarse</Text>
           </TouchableOpacity>
         </>
       ) : (

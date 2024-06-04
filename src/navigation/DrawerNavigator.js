@@ -5,9 +5,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import BottomTabNavigator from './BottomTabNavigator';
 import RegistroScreen from '../screens/Auth/RegistroScreen';
+import Registro2Screen from '../screens/Auth/Registro2Screen'; 
+import Registro3Screen from '../screens/Auth/Registro3Screen';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import VetChatScreen from '../screens/Match/VetChatScreen';
-import HomeScreen from '../screens/HomeScreen'; // Asegúrate de importar tu pantalla de inicio
+import HomeScreen from '../screens/HomeScreen';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -35,6 +37,8 @@ const AuthStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Registro" component={RegistroScreen} />
+        <Stack.Screen name="Registro2" component={Registro2Screen} /> 
+        <Stack.Screen name="Registro3" component={Registro3Screen} />
         <Stack.Screen name="Login" component={LoginScreen} />
     </Stack.Navigator>
 );
