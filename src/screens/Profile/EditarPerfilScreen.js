@@ -1,4 +1,4 @@
-//src/screens/Profile/EditarPerfilScreen.js
+// src/screens/Profile/EditarPerfilScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { getAuth, updateEmail, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
@@ -174,12 +174,14 @@ const EditarPerfilScreen = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-        <Image
-          source={imageUri ? { uri: imageUri } : profileImage}
-          style={styles.profileImage}
-        />
-      </TouchableOpacity>
+      <View style={styles.profileContainer}>
+        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+          <Image
+            source={imageUri ? { uri: imageUri } : profileImage}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
+      </View>
       <Text style={styles.title}>Editar Perfil</Text>
 
       <View style={styles.section}>
@@ -237,11 +239,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  profileContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   profileImage: {
     width: 200,
     height: 200,
     borderRadius: 100,
-    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#c62828',
     overflow: 'hidden',
@@ -249,13 +255,8 @@ const styles = StyleSheet.create({
   imagePicker: {
     width: 200,
     height: 200,
-    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 100,
-    borderWidth: 1,
-    borderColor: '#c62828',
-    marginBottom: 10,
     overflow: 'hidden',
   },
   title: {
