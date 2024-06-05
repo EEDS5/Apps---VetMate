@@ -2,37 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Modal, FlatList } from 'react-native';
-import { firestore, storage } from '../../firebase/firebase'; 
+import { firestore, storage, auth } from '../../firebase/firebase'; 
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const initialDogBreeds = [
-    "Akita Inu",
-    "Beagle",
-    "Border Collie",
-    "Boxer",
-    "Bulldog",
-    "Chihuahua",
-    "Cocker Spaniel",
-    "Dachshund",
-    "Doberman",
-    "English Bulldog",
-    "French Bulldog",
-    "German Shepherd",
-    "Golden Retriever",
-    "Jack Russell Terrier",
-    "Labrador Retriever",
-    "Maltese",
-    "Poodle",
-    "Pug",
-    "Rottweiler",
-    "Shih Tzu",
-    "Siberian Husky",
-    "Schnauzer",
-    "Pit Bull",
-    "American Cocker Spaniel",
-    "Yorkshire Terrier"
-    // Agrega más razas de perros según sea necesario
+    "Akita Inu", "Beagle", "Border Collie", "Boxer", "Bulldog", "Chihuahua",
+    "Cocker Spaniel", "Dachshund", "Doberman", "English Bulldog", "French Bulldog",
+    "German Shepherd", "Golden Retriever", "Jack Russell Terrier", "Labrador Retriever",
+    "Maltese", "Poodle", "Pug", "Rottweiler", "Shih Tzu", "Siberian Husky",
+    "Schnauzer", "Pit Bull", "American Cocker Spaniel", "Yorkshire Terrier"
 ];
 
 const CrearMascotaScreen = ({ navigation }) => {
@@ -120,6 +99,11 @@ const CrearMascotaScreen = ({ navigation }) => {
 
         setIsLoading(true);
         try {
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error('No hay usuario autenticado.');
+            }
+
             const petData = {
                 name: nombreMascota,
                 breed: raza,
@@ -127,6 +111,7 @@ const CrearMascotaScreen = ({ navigation }) => {
                 ageYears: parseInt(edadAnos),
                 ageMonths: parseInt(edadMeses),
                 imageUrl: imageUrl,
+                ownerId: user.uid // Añadir el uid del usuario
             };
 
             await addDoc(collection(firestore, 'Dogs'), petData);

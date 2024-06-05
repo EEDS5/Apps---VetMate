@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ActivityIndicator, FlatList, Modal, ScrollView, Alert
 } from 'react-native';
-import { firestore } from '../../firebase/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { firestore, auth } from '../../firebase/firebase';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 
 const initialDogBreeds = [
     "Akita Inu", "Beagle", "Border Collie", "Boxer", "Bulldog", "Chihuahua", "Cocker Spaniel", "Dachshund", "Doberman",
@@ -33,7 +33,13 @@ const EditarMascotaScreen = ({ navigation }) => {
     const fetchPets = useCallback(async () => {
         setIsLoading(true);
         try {
-            const querySnapshot = await getDocs(collection(firestore, 'Dogs'));
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error('No hay usuario autenticado.');
+            }
+
+            const q = query(collection(firestore, 'Dogs'), where('ownerId', '==', user.uid));
+            const querySnapshot = await getDocs(q);
             const pets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setMascotas(pets);
         } catch (error) {
