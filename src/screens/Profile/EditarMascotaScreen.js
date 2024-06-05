@@ -1,152 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import { Camera } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Modal, FlatList } from 'react-native';
-import { firestore, storage } from '../../firebase/firebase'; 
-import { collection, addDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ActivityIndicator, FlatList, Modal, ScrollView, Alert
+} from 'react-native';
+import { firestore } from '../../firebase/firebase';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-const dogBreeds = [
-    "Akita Inu",
-    "Beagle",
-    "Border Collie",
-    "Boxer",
-    "Bulldog",
-    "Chihuahua",
-    "Cocker Spaniel",
-    "Dachshund",
-    "Doberman",
-    "English Bulldog",
-    "French Bulldog",
-    "German Shepherd",
-    "Golden Retriever",
-    "Jack Russell Terrier",
-    "Labrador Retriever",
-    "Maltese",
-    "Poodle",
-    "Pug",
-    "Rottweiler",
-    "Shih Tzu",
-    "Siberian Husky",
-    "Schnauzer",
-    "Pit Bull",
-    "American Cocker Spaniel",
+const initialDogBreeds = [
+    "Akita Inu", "Beagle", "Border Collie", "Boxer", "Bulldog", "Chihuahua", "Cocker Spaniel", "Dachshund", "Doberman",
+    "English Bulldog", "French Bulldog", "German Shepherd", "Golden Retriever", "Jack Russell Terrier", "Labrador Retriever",
+    "Maltese", "Poodle", "Pug", "Rottweiler", "Shih Tzu", "Siberian Husky", "Schnauzer", "Pit Bull", "American Cocker Spaniel",
     "Yorkshire Terrier"
-    // Agrega más razas de perros según sea necesario
 ];
 
-
 const EditarMascotaScreen = ({ navigation }) => {
-    const [hasPermission, setHasPermission] = useState(null);
+    const [mascotas, setMascotas] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedPet, setSelectedPet] = useState(null);
     const [nombreMascota, setNombreMascota] = useState('');
     const [raza, setRaza] = useState('');
     const [sexo, setSexo] = useState('macho');
     const [edadAnos, setEdadAnos] = useState('');
     const [edadMeses, setEdadMeses] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const [breedModalVisible, setBreedModalVisible] = useState(false);
+    const [dogBreeds, setDogBreeds] = useState(initialDogBreeds);
+    const [newBreed, setNewBreed] = useState('');
+    const [addingBreed, setAddingBreed] = useState(false);
 
     useEffect(() => {
-        (async () => {
-            const cameraStatus = await Camera.requestCameraPermissionsAsync();
-            const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            setHasPermission(cameraStatus.status === 'granted' && galleryStatus.status === 'granted');
-        })();
+        fetchPets();
     }, []);
 
-    const handleImageUpload = async (uri) => {
+    const fetchPets = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(uri);
-            const blob = await response.blob();
-            const fileName = `${Date.now()}_image.jpg`;
-            const storageRef = ref(storage, `images/${fileName}`);
-            await uploadBytes(storageRef, blob);
-            const url = await getDownloadURL(storageRef);
-            setImageUrl(url);
+            const querySnapshot = await getDocs(collection(firestore, 'Dogs'));
+            const pets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMascotas(pets);
         } catch (error) {
-            console.log("Error al subir la imagen:", error);
+            console.log("Error al obtener las mascotas:", error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    const takePicture = async () => {
-        try {
-            let result = await ImagePicker.launchCameraAsync({
-                allowsEditing: false,
-                quality: 1,
-            });
+    const selectPet = useCallback((pet) => {
+        setSelectedPet(pet);
+        setNombreMascota(pet.name);
+        setRaza(pet.breed);
+        setSexo(pet.gender);
+        setEdadAnos(pet.ageYears.toString());
+        setEdadMeses(pet.ageMonths.toString());
+    }, []);
 
-            if (!result.canceled && result.assets) {
-                const uri = result.assets[0].uri;
-                await handleImageUpload(uri);
-            }
-        } catch (error) {
-            console.log("Error al tomar la foto:", error);
-        }
-    };
-
-    const pickImage = async () => {
-        try {
-            let result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: false,
-                quality: 1,
-            });
-
-            if (!result.canceled && result.assets) {
-                const uri = result.assets[0].uri;
-                await handleImageUpload(uri);
-            }
-        } catch (error) {
-            console.log("Error al seleccionar la imagen:", error);
-        }
-    };
-
-    const savePetProfile = async () => {
-        if (!nombreMascota || !raza || !sexo || (!edadAnos && !edadMeses) || !imageUrl) {
+    const updatePet = useCallback(async () => {
+        if (!nombreMascota || !raza || !sexo || (!edadAnos && !edadMeses)) {
             alert("Error: Todos los campos son obligatorios.");
             return;
         }
 
         setIsLoading(true);
         try {
-            const petData = {
+            const petDocRef = doc(firestore, 'Dogs', selectedPet.id);
+            await updateDoc(petDocRef, {
                 name: nombreMascota,
                 breed: raza,
                 gender: sexo,
-                ageYears: edadAnos,
-                ageMonths: edadMeses,
-                imageUrl: imageUrl,
-            };
-
-            await addDoc(collection(firestore, 'Dogs'), petData);
-            alert("Mascota guardada con éxito.");
-            navigation.goBack();
+                ageYears: parseInt(edadAnos),
+                ageMonths: parseInt(edadMeses)
+            });
+            alert("Mascota actualizada con éxito.");
+            fetchPets();
+            setSelectedPet(null);
         } catch (error) {
-            alert("Error al guardar los datos de la mascota:", error.message);
+            alert("Error al actualizar los datos de la mascota:", error.message);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [nombreMascota, raza, sexo, edadAnos, edadMeses, selectedPet, fetchPets]);
 
-    if (hasPermission === null) {
-        return <View style={styles.centered}><Text>Solicitando permisos...</Text></View>;
-    }
+    const deletePet = useCallback(async (petId) => {
+        Alert.alert(
+            "Confirmar Eliminación",
+            "¿Estás seguro de que deseas eliminar esta mascota?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Eliminar",
+                    onPress: async () => {
+                        setIsLoading(true);
+                        try {
+                            await deleteDoc(doc(firestore, 'Dogs', petId));
+                            alert("Mascota eliminada con éxito.");
+                            fetchPets();
+                        } catch (error) {
+                            alert("Error al eliminar la mascota:", error.message);
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    }, [fetchPets]);
 
-    if (!hasPermission) {
-        return <View style={styles.centered}><Text>No se concedieron permisos para acceder a la cámara o galería</Text></View>;
+    const renderPetItem = ({ item }) => (
+        <View style={styles.petCard}>
+            <Image source={{ uri: item.imageUrl }} style={styles.petImage} />
+            <View style={styles.petInfoContainer}>
+                <Text style={styles.petName}>{item.name}</Text>
+                <Text style={styles.petInfo}>Raza: {item.breed}</Text>
+                <Text style={styles.petInfo}>Sexo: {item.gender}</Text>
+                <Text style={styles.petInfo}>Edad: {item.ageYears} años, {item.ageMonths} meses</Text>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.editButton} onPress={() => selectPet(item)}>
+                        <Text style={styles.buttonText}>Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteButton} onPress={() => deletePet(item.id)}>
+                        <Text style={styles.buttonText}>Eliminar</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    );
+
+    if (isLoading) {
+        return <View style={styles.centered}><ActivityIndicator size="large" color="#d32f2f" /></View>;
     }
 
     return (
-        <FlatList
-            ListHeaderComponent={
-                <View style={styles.container}>
-                    <Text style={styles.title}>Crear Mascota</Text>
-                    {imageUrl && <Image source={{ uri: imageUrl }} style={styles.petImage} />}
+        <View style={styles.container}>
+            {selectedPet ? (
+                <ScrollView style={styles.scrollContainer}>
                     <View style={styles.section}>
+                        <Text style={styles.title}>Editar Mascota</Text>
+                        {selectedPet.imageUrl && <Image source={{ uri: selectedPet.imageUrl }} style={styles.petImageLarge} />}
                         <Text style={styles.label}>Nombre del Perro:</Text>
                         <TextInput
                             style={styles.input}
@@ -198,69 +185,89 @@ const EditarMascotaScreen = ({ navigation }) => {
                                 />
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.button} onPress={takePicture}>
-                            <Text style={styles.buttonText}>Tomar Foto</Text>
+                        <TouchableOpacity style={styles.saveButton} onPress={updatePet} disabled={isLoading}>
+                            <Text style={styles.buttonText}>Guardar Cambios</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.button} onPress={pickImage}>
-                            <Text style={styles.buttonText}>Seleccionar de Galería</Text>
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedPet(null)}>
+                            <Text style={styles.buttonText}>Cancelar</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.saveButton}
-                            onPress={savePetProfile}
-                            disabled={isLoading}
-                        >
-                            <Text style={styles.buttonText}>Guardar Mascota</Text>
-                        </TouchableOpacity>
-                        {isLoading && <ActivityIndicator size="large" color="#d32f2f" />}
                     </View>
-                    <Modal visible={breedModalVisible} animationType="slide">
-                        <View style={styles.modalContainer}>
-                            <Text style={styles.modalTitle}>Seleccionar Raza</Text>
-                            <FlatList
-                                data={dogBreeds}
-                                keyExtractor={(item, index) => index.toString()}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={styles.breedOption}
-                                        onPress={() => {
-                                            setRaza(item);
-                                            setBreedModalVisible(false);
-                                        }}
-                                    >
-                                        <Text style={styles.breedName}>{item}</Text>
-                                    </TouchableOpacity>
-                                )}
+                </ScrollView>
+            ) : (
+                <FlatList
+                    data={mascotas}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderPetItem}
+                />
+            )}
+            <Modal visible={breedModalVisible} animationType="slide">
+                <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Seleccionar Raza</Text>
+                    <FlatList
+                        data={dogBreeds}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.breedOption}
+                                onPress={() => {
+                                    setRaza(item);
+                                    setBreedModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.breedName}>{item}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                    <TouchableOpacity style={styles.breedOption} onPress={() => setAddingBreed(true)}>
+                        <Text style={styles.breedName}>Añadir Nueva Raza</Text>
+                    </TouchableOpacity>
+                    {addingBreed && (
+                        <View style={styles.newBreedContainer}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nombre de la nueva raza"
+                                value={newBreed}
+                                onChangeText={setNewBreed}
                             />
                             <TouchableOpacity
-                                style={styles.modalCloseButton}
-                                onPress={() => setBreedModalVisible(false)}
+                                style={styles.saveButton}
+                                onPress={() => {
+                                    if (newBreed.trim()) {
+                                        setRaza(newBreed.trim());
+                                        setDogBreeds(prevBreeds => [...prevBreeds, newBreed.trim()]);
+                                        setNewBreed('');
+                                        setAddingBreed(false);
+                                        setBreedModalVisible(false);
+                                    } else {
+                                        alert('El nombre de la raza no puede estar vacío.');
+                                    }
+                                }}
                             >
-                                <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+                                <Text style={styles.buttonText}>Guardar Nueva Raza</Text>
                             </TouchableOpacity>
                         </View>
-                    </Modal>
+                    )}
+                    <TouchableOpacity style={styles.modalCloseButton} onPress={() => {
+                        setBreedModalVisible(false);
+                        setAddingBreed(false);
+                    }}>
+                        <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+                    </TouchableOpacity>
                 </View>
-            }
-            data={[]}
-            renderItem={null}
-            keyExtractor={(item, index) => index.toString()}
-        />
+            </Modal>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        flex: 1,
         padding: 20,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#f5f5f5',
     },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#d32f2f',
-        marginBottom: 20,
+    scrollContainer: {
+        flexGrow: 1,
+        padding: 20,
     },
     section: {
         width: '100%',
@@ -268,7 +275,17 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         backgroundColor: '#fff',
         borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
         elevation: 3,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 20,
     },
     label: {
         fontSize: 18,
@@ -278,18 +295,18 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: 16,
-        backgroundColor: '#e0e0e0',
+        backgroundColor: '#e6e6e6',
         padding: 12,
         marginBottom: 15,
-        borderRadius: 5,
+        borderRadius: 8,
         borderColor: '#ccc',
         borderWidth: 1,
     },
     breedButton: {
-        backgroundColor: '#e0e0e0',
+        backgroundColor: '#e6e6e6',
         padding: 12,
         marginBottom: 15,
-        borderRadius: 5,
+        borderRadius: 8,
         borderColor: '#ccc',
         borderWidth: 1,
         alignItems: 'center',
@@ -297,47 +314,6 @@ const styles = StyleSheet.create({
     breedButtonText: {
         fontSize: 16,
         color: '#333',
-    },
-    ageSection: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    ageInputContainer: {
-        flex: 1,
-        marginRight: 10,
-    },
-    button: {
-        backgroundColor: '#d32f2f',
-        padding: 15,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginVertical: 10,
-        elevation: 2,
-    },
-    saveButton: {
-        backgroundColor: '#388e3c',
-        padding: 15,
-        borderRadius: 5,
-        alignItems: 'center',
-        elevation: 2,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    petImage: {
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        marginBottom: 20,
-        borderColor: '#d32f2f',
-        borderWidth: 2,
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     pickerContainer: {
         flexDirection: 'row',
@@ -348,9 +324,9 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 12,
         alignItems: 'center',
-        borderRadius: 5,
+        borderRadius: 8,
         marginHorizontal: 5,
-        backgroundColor: '#e0e0e0',
+        backgroundColor: '#e6e6e6',
     },
     pickerButtonSelected: {
         backgroundColor: '#d32f2f',
@@ -359,6 +335,93 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    ageSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    ageInputContainer: {
+        flex: 1,
+        marginRight: 10,
+    },
+    saveButton: {
+        backgroundColor: '#4CAF50',
+        padding: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        elevation: 2,
+        marginTop: 10,
+    },
+    cancelButton: {
+        backgroundColor: '#f44336',
+        padding: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        elevation: 2,
+        marginTop: 10,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    petCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    petImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 10,
+        marginRight: 15,
+    },
+    petImageLarge: {
+        width: 200,
+        height: 200,
+        borderRadius: 20,
+        marginBottom: 15,
+        borderColor: '#d32f2f',
+        borderWidth: 2,
+    },
+    petInfoContainer: {
+        flex: 1,
+    },
+    petName: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    petInfo: {
+        fontSize: 16,
+        color: '#555',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        marginTop: 10,
+    },
+    editButton: {
+        backgroundColor: '#4CAF50',
+        padding: 10,
+        borderRadius: 8,
+        marginRight: 10,
+    },
+    deleteButton: {
+        backgroundColor: '#f44336',
+        padding: 10,
+        borderRadius: 8,
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     modalContainer: {
         flex: 1,
@@ -371,7 +434,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
-        color: '#d32f2f',
+        color: '#333',
     },
     breedOption: {
         padding: 10,
@@ -384,17 +447,22 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#333',
     },
+    newBreedContainer: {
+        marginTop: 20,
+        width: '100%',
+        alignItems: 'center',
+    },
     modalCloseButton: {
         marginTop: 20,
-        backgroundColor: '#d32f2f',
+        backgroundColor: '#f44336',
         padding: 10,
-        borderRadius: 5,
+        borderRadius: 8,
     },
     modalCloseButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-    }
+    },
 });
 
 export default EditarMascotaScreen;
