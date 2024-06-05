@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth';
 import { UserContext } from '../../context/UserContext/UserContext';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/firebase';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
@@ -19,7 +19,7 @@ const PerfilScreen = ({ navigation, route }) => {
     const [userDogs, setUserDogs] = useState([]);
     const auth = getAuth();
 
-    const loadUserData = async () => {
+    const loadUserData = useCallback(async () => {
         const user = auth.currentUser;
         if (user) {
             const userDoc = await getDoc(doc(firestore, 'users', user.uid));
@@ -44,11 +44,33 @@ const PerfilScreen = ({ navigation, route }) => {
                 setUserDogs(dogs);
             }
         }
-    };
+    }, []);
 
     useEffect(() => {
         loadUserData();
-    }, [route.params?.updated]);
+    }, [route.params?.updated, loadUserData]);
+
+    const handleDeletePet = useCallback((petId) => {
+        Alert.alert(
+            "Confirmar Eliminación",
+            "¿Estás seguro de que deseas eliminar esta mascota?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Eliminar",
+                    onPress: async () => {
+                        try {
+                            await deleteDoc(doc(firestore, 'Dogs', petId));
+                            alert("Mascota eliminada con éxito.");
+                            loadUserData(); // Refrescar la lista de mascotas después de eliminar
+                        } catch (error) {
+                            alert("Error al eliminar la mascota:", error.message);
+                        }
+                    }
+                }
+            ]
+        );
+    }, [loadUserData]);
 
     const handleSignOut = () => {
         signOut(auth).then(() => {
@@ -103,12 +125,20 @@ const PerfilScreen = ({ navigation, route }) => {
                         <Text style={styles.detailText}>{dog.breed}</Text>
                         <Text style={styles.detailLabel}>Edad:</Text>
                         <Text style={styles.detailText}>{dog.ageYears} años {dog.ageMonths} meses</Text>
-                        <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={() => navigation.navigate('EditarMascota', { petId: dog.id })}
-                        >
-                            <Text style={styles.buttonText}>Editar Mascota</Text>
-                        </TouchableOpacity>
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={styles.editButton}
+                                onPress={() => navigation.navigate('EditarMascota', { petId: dog.id })}
+                            >
+                                <Text style={styles.buttonText}>Editar Mascota</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => handleDeletePet(dog.id)}
+                            >
+                                <Text style={styles.buttonText}>Eliminar Mascota</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 ))}
             </View>
@@ -189,10 +219,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 10,
     },
+    deleteButton: {
+        backgroundColor: '#d32f2f',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 10,
     },
     dogContainer: {
         marginTop: 10,
