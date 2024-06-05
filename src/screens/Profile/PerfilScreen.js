@@ -1,9 +1,8 @@
-// src/screens/Profile/PerfilScreen.js
-import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth';
 import { UserContext } from '../../context/UserContext/UserContext';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/firebase';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
@@ -17,9 +16,10 @@ const PerfilScreen = ({ navigation, route }) => {
     const { userProfile, dispatch } = useContext(UserContext);
     const [profileImage, setProfileImage] = useState(null);
     const [userData, setUserData] = useState(null);
+    const [userDogs, setUserDogs] = useState([]);
     const auth = getAuth();
 
-    const loadUserData = async () => {
+    const loadUserData = useCallback(async () => {
         const user = auth.currentUser;
         if (user) {
             const userDoc = await getDoc(doc(firestore, 'users', user.uid));
@@ -36,24 +36,53 @@ const PerfilScreen = ({ navigation, route }) => {
                     console.log('No profile image found, using default based on gender');
                     setProfileImage(defaultImages[data.gender] || defaultImages.other);
                 }
+
+                // Cargar perros del usuario
+                const q = query(collection(firestore, 'Dogs'), where('ownerId', '==', user.uid));
+                const querySnapshot = await getDocs(q);
+                const dogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setUserDogs(dogs);
             }
         }
-    };
+    }, []);
 
     useEffect(() => {
         loadUserData();
-    }, [route.params?.updated]);
+    }, [route.params?.updated, loadUserData]);
+
+    const handleDeletePet = useCallback((petId) => {
+        Alert.alert(
+            "Confirmar Eliminación",
+            "¿Estás seguro de que deseas eliminar esta mascota?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Eliminar",
+                    onPress: async () => {
+                        try {
+                            await deleteDoc(doc(firestore, 'Dogs', petId));
+                            alert("Mascota eliminada con éxito.");
+                            loadUserData(); // Refrescar la lista de mascotas después de eliminar
+                        } catch (error) {
+                            alert("Error al eliminar la mascota:", error.message);
+                        }
+                    }
+                }
+            ]
+        );
+    }, [loadUserData]);
 
     const handleSignOut = () => {
         signOut(auth).then(() => {
             console.log('Usuario cerró sesión');
+            navigation.navigate('Login'); // Navegar a la pantalla de login tras el cierre de sesión
         }).catch((error) => {
             console.error('Error al cerrar sesión:', error);
         });
     };
 
     if (!userData) {
-        return <Text>Loading...</Text>;
+        return <View style={styles.loadingContainer}><Text>Loading...</Text></View>;
     }
 
     return (
@@ -86,15 +115,32 @@ const PerfilScreen = ({ navigation, route }) => {
                 >
                     <Text style={styles.buttonText}>Crear Mascota</Text>
                 </TouchableOpacity>
-                
-                {userProfile.dog && (
-                    <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() => navigation.navigate('EditarMascota', { petId: userProfile.dog.id })}
-                    >
-                        <Text style={styles.buttonText}>Editar Mascota</Text>
-                    </TouchableOpacity>
-                )}
+
+                {userDogs.map(dog => (
+                    <View key={dog.id} style={styles.dogContainer}>
+                        <Image source={{ uri: dog.imageUrl }} style={styles.petImage} />
+                        <Text style={styles.detailLabel}>Nombre:</Text>
+                        <Text style={styles.detailText}>{dog.name}</Text>
+                        <Text style={styles.detailLabel}>Raza:</Text>
+                        <Text style={styles.detailText}>{dog.breed}</Text>
+                        <Text style={styles.detailLabel}>Edad:</Text>
+                        <Text style={styles.detailText}>{dog.ageYears} años {dog.ageMonths} meses</Text>
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={styles.editButton}
+                                onPress={() => navigation.navigate('EditarMascota', { petId: dog.id })}
+                            >
+                                <Text style={styles.buttonText}>Editar Mascota</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => handleDeletePet(dog.id)}
+                            >
+                                <Text style={styles.buttonText}>Eliminar Mascota</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                ))}
             </View>
 
             <View style={styles.section}>
@@ -117,6 +163,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     button: {
         backgroundColor: '#d32f2f',
         paddingVertical: 12,
@@ -134,11 +185,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#c62828',
         overflow: 'hidden',
-    },
-    petImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
     },
     title: {
         fontSize: 24,
@@ -173,11 +219,50 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 10,
     },
+    deleteButton: {
+        backgroundColor: '#d32f2f',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
     },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 10,
+    },
+    dogContainer: {
+        marginTop: 10,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        marginBottom: 10,
+        alignItems: 'center'
+    },
+    petImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        marginBottom: 10,
+    },
+    shadow: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    }
 });
 
 export default PerfilScreen;

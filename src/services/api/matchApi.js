@@ -1,25 +1,40 @@
-// src/Services/api/matchApi.js
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Animated } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
 const MatchApi = ({ dog, onLike, onDislike }) => {
     const [liked, setLiked] = useState(false);
+    const [disliked, setDisliked] = useState(false);
+    const animation = new Animated.Value(1);
 
     const handleLike = () => {
         setLiked(true);
+        animateCard();
         onLike(dog.id);
     };
 
     const handleDislike = () => {
-        setLiked(false);
+        setDisliked(true);
+        animateCard();
         onDislike(dog.id);
     };
 
+    const animateCard = () => {
+        Animated.timing(animation, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            setLiked(false);
+            setDisliked(false);
+            animation.setValue(1);
+        });
+    };
+
     return (
-        <View style={styles.card}>
+        <Animated.View style={[styles.card, { transform: [{ scale: animation }] }]}>
             <Image source={{ uri: dog.imageUrl }} style={styles.image} />
             <View style={styles.info}>
                 <Text style={styles.name}>{dog.name}</Text>
@@ -34,7 +49,7 @@ const MatchApi = ({ dog, onLike, onDislike }) => {
                     <FontAwesome name="heart" size={32} color="#fff" />
                 </TouchableOpacity>
             </View>
-        </View>
+        </Animated.View>
     );
 };
 
@@ -54,7 +69,7 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: width - 40, // Hacer que la imagen sea cuadrada
+        height: width - 40,
     },
     info: {
         padding: 15,
