@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { collection, getDocs } from 'firebase/firestore';
-import { firestore } from '../../firebase/firebase';
+import { collection, getDocs, query, where, updateDoc, arrayUnion, doc, getDoc, setDoc } from 'firebase/firestore';
+import { firestore, auth } from '../../firebase/firebase';
 import MatchApi from '../../services/api/matchApi';
 
 const BuscarMatchScreen = () => {
@@ -11,8 +11,15 @@ const BuscarMatchScreen = () => {
 
     useEffect(() => {
         const fetchDogs = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                console.error('Usuario no autenticado');
+                return;
+            }
+
             try {
-                const querySnapshot = await getDocs(collection(firestore, 'Dogs'));
+                const q = query(collection(firestore, 'Dogs'), where('ownerId', '!=', user.uid));
+                const querySnapshot = await getDocs(q);
                 const dogsList = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data(),
@@ -31,20 +38,48 @@ const BuscarMatchScreen = () => {
         return () => clearInterval(intervalId);
     }, []);
 
-    const handleLike = (id) => {
+    const handleLike = async (id) => {
         console.log("Liked dog with id:", id);
-        // Implementar lógica adicional para manejar el "like"
+        await registerLike(id);
         showNextDog();
     };
 
     const handleDislike = (id) => {
         console.log("Disliked dog with id:", id);
-        // Implementar lógica adicional para manejar el "dislike"
         showNextDog();
     };
 
     const showNextDog = () => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % dogs.length);
+    };
+
+    const registerLike = async (likedDogId) => {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('Usuario no autenticado');
+            return;
+        }
+
+        try {
+            await updateDoc(doc(firestore, 'Dogs', likedDogId), {
+                likedBy: arrayUnion(user.uid)
+            });
+
+            const likedDogDoc = await getDoc(doc(firestore, 'Dogs', likedDogId));
+            const likedBy = likedDogDoc.data().likedBy || [];
+
+            if (likedBy.includes(user.uid)) {
+                console.log("It's a match!");
+                // Handle the match logic here (e.g., update Firestore, notify users, etc.)
+                const chatId = [auth.currentUser.uid, likedDogDoc.data().ownerId].sort().join('_');
+                await setDoc(doc(firestore, 'chats', chatId), {
+                    users: [auth.currentUser.uid, likedDogDoc.data().ownerId],
+                    createdAt: new Date()
+                });
+            }
+        } catch (error) {
+            console.error("Error al registrar el like:", error);
+        }
     };
 
     if (isLoading) {

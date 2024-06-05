@@ -1,41 +1,45 @@
-// src/screens/Chat/ChatListScreen.js
+ // src/screens/Chat/ChatListScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const ChatListScreen = ({ navigation }) => {
-    const [users, setUsers] = useState([]);
+    const [chats, setChats] = useState([]);
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            const querySnapshot = await getDocs(collection(firestore, 'users'));
-            const usersList = [];
-            querySnapshot.forEach((doc) => {
-                if (doc.id !== auth.currentUser.uid) {
-                    usersList.push({ id: doc.id, ...doc.data() });
-                }
-            });
-            setUsers(usersList);
+        const fetchChats = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                console.error('Usuario no autenticado');
+                return;
+            }
+
+            const q = query(collection(firestore, 'chats'), where('users', 'array-contains', user.uid));
+            const querySnapshot = await getDocs(q);
+            const chatsList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setChats(chatsList);
         };
 
-        fetchUsers();
+        fetchChats();
     }, []);
 
-    const handleChat = (user) => {
-        navigation.navigate('Chat', { user });
+    const handleChat = (chat) => {
+        navigation.navigate('Chat', { chatId: chat.id, chatUsers: chat.users });
     };
 
     return (
         <View style={styles.container}>
             <FlatList
-                data={users}
+                data={chats}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => handleChat(item)}>
-                        <View style={styles.userItem}>
-                            <Text style={styles.userName}>{item.name}</Text>
-                            <Text style={styles.userEmail}>{item.email}</Text>
+                        <View style={styles.chatItem}>
+                            <Text style={styles.chatName}>{item.users.join(', ')}</Text>
                         </View>
                     </TouchableOpacity>
                 )}
@@ -50,18 +54,14 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#fff',
     },
-    userItem: {
+    chatItem: {
         padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
     },
-    userName: {
+    chatName: {
         fontSize: 18,
         fontWeight: 'bold',
-    },
-    userEmail: {
-        fontSize: 14,
-        color: '#555',
     },
 });
 
