@@ -5,6 +5,7 @@ import { UserContext } from '../../context/UserContext/UserContext';
 import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/firebase';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const defaultImages = {
     male: require('../../../assets/img/Male_Transparent.png'),
@@ -46,9 +47,11 @@ const PerfilScreen = ({ navigation, route }) => {
         }
     }, []);
 
-    useEffect(() => {
-        loadUserData();
-    }, [route.params?.updated, loadUserData]);
+    useFocusEffect(
+        useCallback(() => {
+            loadUserData();
+        }, [loadUserData])
+    );
 
     const handleDeletePet = useCallback((petId) => {
         Alert.alert(
