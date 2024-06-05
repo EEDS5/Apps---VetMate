@@ -1,9 +1,9 @@
-// src/navigation/BottomTabNavigator.js
 import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import BuscarMatchScreen from '../screens/Match/BuscarMatchScreen';
 import ProfileStackNavigator from './ProfileStackNavigator';
+import ChatStackNavigator from './ChatStackNavigator'; // Importa el nuevo stack de chat
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; 
 
@@ -33,12 +33,14 @@ const BottomTabNavigator = () => {
                         iconName = focused ? 'heart' : 'heart-outline';
                     } else if (route.name === 'PerfilTab') {
                         iconName = focused ? 'person' : 'person-outline';
+                    } else if (route.name === 'ChatTab') {
+                        iconName = focused ? 'chatbox' : 'chatbox-outline';
                     }
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
                 tabBarActiveTintColor: activeTintColor,
                 tabBarInactiveTintColor: inactiveTintColor,
-                tabBarVisible: route.name === 'HomeTab' || user !== null, // Mostrar tabBar solo si el usuario está autenticado o es la pestaña de Home
+                tabBarVisible: route.name === 'HomeTab' || user !== null,
             })}
         >
             <Tab.Screen
@@ -50,12 +52,19 @@ const BottomTabNavigator = () => {
             />
             {user && (
                 <>
+                
                     <Tab.Screen name="BuscarMatch" component={BuscarMatchScreen} options={{ tabBarLabel: 'Match' }} />
+                    <Tab.Screen
+                        name="ChatTab"
+                        component={ChatStackNavigator} // Componente del stack de chat
+                        options={{ tabBarLabel: 'Chat' }}
+                    />
                     <Tab.Screen
                         name="PerfilTab"
                         component={ProfileStackNavigator} 
                         options={{ tabBarLabel: 'Perfil' }}
                     />
+                    
                 </>
             )}
         </Tab.Navigator>
