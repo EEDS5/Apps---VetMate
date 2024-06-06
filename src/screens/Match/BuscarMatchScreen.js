@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { collection, getDocs, query, where, updateDoc, arrayUnion, doc, addDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, addDoc, getDoc } from 'firebase/firestore';
 import { firestore, auth } from '../../firebase/firebase';
 import MatchApi from '../../services/api/matchApi';
 
@@ -64,8 +64,12 @@ const BuscarMatchScreen = () => {
             const likedDogDoc = await getDoc(doc(firestore, 'Dogs', likedDogId));
             const likedDog = likedDogDoc.data();
 
+            const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+            const senderName = userDoc.data().name;
+
             await addDoc(collection(firestore, 'MatchRequests'), {
                 senderId: user.uid,
+                senderName,
                 receiverId: likedDog.ownerId,
                 dogId: likedDogId,
                 status: 'pending'

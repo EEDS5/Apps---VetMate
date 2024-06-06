@@ -1,8 +1,7 @@
-// src/screens/Chat/MatchRequestsScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const MatchRequestsScreen = ({ navigation }) => {
     const [requests, setRequests] = useState([]);
@@ -27,15 +26,16 @@ const MatchRequestsScreen = ({ navigation }) => {
         fetchRequests();
     }, []);
 
-    const handleAccept = async (requestId, senderId) => {
+    const handleAccept = async (requestId, senderId, senderName) => {
         try {
             await updateDoc(doc(firestore, 'MatchRequests', requestId), { status: 'accepted' });
             const chatId = [auth.currentUser.uid, senderId].sort().join('_');
-            await updateDoc(doc(firestore, 'chats', chatId), {
-                users: arrayUnion(auth.currentUser.uid, senderId),
+            await addDoc(doc(firestore, 'chats', chatId), {
+                users: [auth.currentUser.uid, senderId],
                 createdAt: serverTimestamp(),
+                chatId
             });
-            navigation.navigate('Chat', { user: { id: senderId } });
+            navigation.navigate('Chat', { user: { id: senderId, name: senderName } });
         } catch (error) {
             console.error("Error al aceptar la solicitud:", error);
         }
@@ -57,11 +57,11 @@ const MatchRequestsScreen = ({ navigation }) => {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.requestItem}>
-                        <Text style={styles.requestText}>Solicitud de {item.senderId} para {item.dogId}</Text>
+                        <Text style={styles.requestText}>Solicitud de {item.senderName} para {item.dogId}</Text>
                         <View style={styles.buttons}>
                             <TouchableOpacity
                                 style={styles.acceptButton}
-                                onPress={() => handleAccept(item.id, item.senderId)}
+                                onPress={() => handleAccept(item.id, item.senderId, item.senderName)}
                             >
                                 <Text style={styles.buttonText}>Aceptar</Text>
                             </TouchableOpacity>
