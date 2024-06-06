@@ -24,7 +24,6 @@ const ChatListScreen = ({ navigation }) => {
 
         setChats(chatsList);
 
-        // Fetch user details for all chats
         const userIds = new Set();
         chatsList.forEach(chat => {
             chat.users.forEach(uid => {
@@ -71,7 +70,7 @@ const ChatListScreen = ({ navigation }) => {
                     const otherUserId = item.users.find(uid => uid !== auth.currentUser.uid);
                     const otherUserName = userDetails[otherUserId]?.name || 'Usuario';
                     return (
-                        <TouchableOpacity onPress={() => handleChat(item)}>
+                        <TouchableOpacity onPress={() => handleChat(item)} style={styles.chatItemContainer}>
                             <View style={styles.chatItem}>
                                 <Text style={styles.chatTitle}>Chat con {otherUserName}</Text>
                             </View>
@@ -93,16 +92,27 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        backgroundColor: '#fff',
+        backgroundColor: '#e9ecef',
+    },
+    chatItemContainer: {
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     chatItem: {
         padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        borderColor: '#ccc',
+        borderWidth: 1,
     },
     chatTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: '#495057',
     },
 });
 
