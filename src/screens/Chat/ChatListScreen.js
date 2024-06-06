@@ -1,55 +1,60 @@
-// src/screens/Chat/ChatListScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 
 const ChatListScreen = ({ navigation }) => {
     const [chats, setChats] = useState([]);
     const [userDetails, setUserDetails] = useState({});
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchChats = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('Usuario no autenticado');
+            return;
+        }
+
+        const q = query(collection(firestore, 'chats'), where('users', 'array-contains', user.uid));
+        const querySnapshot = await getDocs(q);
+        const chatsList = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+
+        setChats(chatsList);
+
+        // Fetch user details for all chats
+        const userIds = new Set();
+        chatsList.forEach(chat => {
+            chat.users.forEach(uid => {
+                if (uid !== user.uid) {
+                    userIds.add(uid);
+                }
+            });
+        });
+
+        const userDetailsPromises = Array.from(userIds).map(async uid => {
+            const userDoc = await getDoc(doc(firestore, 'users', uid));
+            return { uid, ...userDoc.data() };
+        });
+
+        const userDetailsArray = await Promise.all(userDetailsPromises);
+        const userDetailsMap = userDetailsArray.reduce((acc, userDetail) => {
+            acc[userDetail.uid] = userDetail;
+            return acc;
+        }, {});
+
+        setUserDetails(userDetailsMap);
+    };
 
     useEffect(() => {
-        const fetchChats = async () => {
-            const user = auth.currentUser;
-            if (!user) {
-                console.error('Usuario no autenticado');
-                return;
-            }
-
-            const q = query(collection(firestore, 'chats'), where('users', 'array-contains', user.uid));
-            const querySnapshot = await getDocs(q);
-            const chatsList = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-
-            setChats(chatsList);
-
-            // Fetch user details for all chats
-            const userIds = new Set();
-            chatsList.forEach(chat => {
-                chat.users.forEach(uid => {
-                    if (uid !== user.uid) {
-                        userIds.add(uid);
-                    }
-                });
-            });
-
-            const userDetailsPromises = Array.from(userIds).map(async uid => {
-                const userDoc = await getDoc(doc(firestore, 'users', uid));
-                return { uid, ...userDoc.data() };
-            });
-
-            const userDetailsArray = await Promise.all(userDetailsPromises);
-            const userDetailsMap = userDetailsArray.reduce((acc, userDetail) => {
-                acc[userDetail.uid] = userDetail;
-                return acc;
-            }, {});
-
-            setUserDetails(userDetailsMap);
-        };
-
         fetchChats();
+    }, []);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchChats().then(() => setRefreshing(false));
     }, []);
 
     const handleChat = (chat) => {
@@ -73,6 +78,12 @@ const ChatListScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     );
                 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
             />
         </View>
     );
