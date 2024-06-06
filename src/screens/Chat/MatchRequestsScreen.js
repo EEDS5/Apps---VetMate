@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, addDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const MatchRequestsScreen = ({ navigation }) => {
     const [requests, setRequests] = useState([]);
@@ -26,16 +26,23 @@ const MatchRequestsScreen = ({ navigation }) => {
         fetchRequests();
     }, []);
 
-    const handleAccept = async (requestId, senderId, senderName) => {
+    const handleAccept = async (requestId, senderId, dogId) => {
         try {
             await updateDoc(doc(firestore, 'MatchRequests', requestId), { status: 'accepted' });
             const chatId = [auth.currentUser.uid, senderId].sort().join('_');
-            await addDoc(doc(firestore, 'chats', chatId), {
+            await addDoc(collection(firestore, 'chats'), {
                 users: [auth.currentUser.uid, senderId],
                 createdAt: serverTimestamp(),
                 chatId
             });
-            navigation.navigate('Chat', { user: { id: senderId, name: senderName } });
+
+            const senderDoc = await getDoc(doc(firestore, 'users', senderId));
+            const senderName = senderDoc.data().name;
+
+            const dogDoc = await getDoc(doc(firestore, 'Dogs', dogId));
+            const dogData = dogDoc.data();
+
+            navigation.navigate('Chat', { user: { id: senderId, name: senderName }, dog: dogData });
         } catch (error) {
             console.error("Error al aceptar la solicitud:", error);
         }
@@ -57,11 +64,11 @@ const MatchRequestsScreen = ({ navigation }) => {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.requestItem}>
-                        <Text style={styles.requestText}>Solicitud de {item.senderName} para {item.dogId}</Text>
+                        <Text style={styles.requestText}>Solicitud de {item.senderName} para tu perro {item.dogName} ({item.dogBreed})</Text>
                         <View style={styles.buttons}>
                             <TouchableOpacity
                                 style={styles.acceptButton}
-                                onPress={() => handleAccept(item.id, item.senderId, item.senderName)}
+                                onPress={() => handleAccept(item.id, item.senderId, item.dogId)}
                             >
                                 <Text style={styles.buttonText}>Aceptar</Text>
                             </TouchableOpacity>
