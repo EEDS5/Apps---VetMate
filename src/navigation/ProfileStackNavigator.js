@@ -10,7 +10,7 @@ const Stack = createStackNavigator();
 
 const ProfileStackNavigator = () => {
   return (
-    <Stack.Navigator
+    <Stack.Navigator 
       initialRouteName="Perfil"
       screenOptions={{
         headerShown: false  // Esto ocultará el encabezado para todas las pantallas en este Stack

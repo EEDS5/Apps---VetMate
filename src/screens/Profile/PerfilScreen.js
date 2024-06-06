@@ -8,155 +8,169 @@ import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import { useFocusEffect } from '@react-navigation/native';
 
 const defaultImages = {
-    male: require('../../../assets/img/Male_Transparent.png'),
-    female: require('../../../assets/img/Female_Transparent.png'),
-    other: require('../../../assets/img/Neutral_Transparent.png')
+  male: require('../../../assets/img/Male_Transparent.png'),
+  female: require('../../../assets/img/Female_Transparent.png'),
+  other: require('../../../assets/img/Neutral_Transparent.png')
 };
 
 const PerfilScreen = ({ navigation, route }) => {
-    const { userProfile, dispatch } = useContext(UserContext);
-    const [profileImage, setProfileImage] = useState(null);
-    const [userData, setUserData] = useState(null);
-    const [userDogs, setUserDogs] = useState([]);
-    const auth = getAuth();
+  console.log("PerfilScreen rendered");
+  const { userProfile, dispatch } = useContext(UserContext);
+  const [profileImage, setProfileImage] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [userDogs, setUserDogs] = useState([]);
+  const auth = getAuth();
 
-    const loadUserData = useCallback(async () => {
-        const user = auth.currentUser;
-        if (user) {
-            const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                setUserData(data);
+  const loadUserData = useCallback(async () => {
+    console.log("loadUserData called");
+    const user = auth.currentUser;
+    if (user) {
+      const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setUserData(data);
 
-                const storage = getStorage();
-                const profileImageRef = ref(storage, `profile_images/${user.uid}/profile.jpg`);
-                try {
-                    const imageUrl = await getDownloadURL(profileImageRef);
-                    setProfileImage({ uri: imageUrl });
-                } catch (error) {
-                    console.log('No profile image found, using default based on gender');
-                    setProfileImage(defaultImages[data.gender] || defaultImages.other);
-                }
-
-                // Cargar perros del usuario
-                const q = query(collection(firestore, 'Dogs'), where('ownerId', '==', user.uid));
-                const querySnapshot = await getDocs(q);
-                const dogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setUserDogs(dogs);
-            }
+        const storage = getStorage();
+        const profileImageRef = ref(storage, `profile_images/${user.uid}/profile.jpg`);
+        try {
+          const imageUrl = await getDownloadURL(profileImageRef);
+          setProfileImage({ uri: imageUrl });
+        } catch (error) {
+          console.log('No profile image found, using default based on gender');
+          setProfileImage(defaultImages[data.gender] || defaultImages.other);
         }
-    }, []);
 
-    useFocusEffect(
-        useCallback(() => {
-            loadUserData();
-        }, [loadUserData])
-    );
-
-    const handleDeletePet = useCallback((petId) => {
-        Alert.alert(
-            "Confirmar Eliminación",
-            "¿Estás seguro de que deseas eliminar esta mascota?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Eliminar",
-                    onPress: async () => {
-                        try {
-                            await deleteDoc(doc(firestore, 'Dogs', petId));
-                            alert("Mascota eliminada con éxito.");
-                            loadUserData(); // Refrescar la lista de mascotas después de eliminar
-                        } catch (error) {
-                            alert("Error al eliminar la mascota:", error.message);
-                        }
-                    }
-                }
-            ]
-        );
-    }, [loadUserData]);
-
-    const handleSignOut = () => {
-        signOut(auth).then(() => {
-            console.log('Usuario cerró sesión');
-            navigation.navigate('Login'); // Navegar a la pantalla de login tras el cierre de sesión
-        }).catch((error) => {
-            console.error('Error al cerrar sesión:', error);
-        });
-    };
-
-    if (!userData) {
-        return <View style={styles.loadingContainer}><Text>Loading...</Text></View>;
+        const q = query(collection(firestore, 'Dogs'), where('ownerId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        const dogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setUserDogs(dogs);
+      }
     }
+  }, [auth]);
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Image
-                source={profileImage}
-                style={styles.profileImage}
-            />
-            <Text style={styles.title}>Perfil del Usuario</Text>
+  useFocusEffect(
+    useCallback(() => {
+      console.log("useFocusEffect triggered");
+      loadUserData();
+    }, [loadUserData])
+  );
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Información Personal</Text>
-                <Text style={styles.detailLabel}>Nombre:</Text>
-                <Text style={styles.detailText}>{userData.name}</Text>
-                <Text style={styles.detailLabel}>Correo Electrónico:</Text>
-                <Text style={styles.detailText}>{userData.email}</Text>
-                <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => navigation.navigate('EditarPerfil')}
-                >
-                    <Text style={styles.buttonText}>Editar Perfil</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Mascotas</Text>
-                <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => navigation.navigate('CrearMascota')}
-                >
-                    <Text style={styles.buttonText}>Crear Mascota</Text>
-                </TouchableOpacity>
-
-                {userDogs.map(dog => (
-                    <View key={dog.id} style={styles.dogContainer}>
-                        <Image source={{ uri: dog.imageUrl }} style={styles.petImage} />
-                        <Text style={styles.detailLabel}>Nombre:</Text>
-                        <Text style={styles.detailText}>{dog.name}</Text>
-                        <Text style={styles.detailLabel}>Raza:</Text>
-                        <Text style={styles.detailText}>{dog.breed}</Text>
-                        <Text style={styles.detailLabel}>Edad:</Text>
-                        <Text style={styles.detailText}>{dog.ageYears} años {dog.ageMonths} meses</Text>
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity
-                                style={styles.editButton}
-                                onPress={() => navigation.navigate('EditarMascota', { petId: dog.id })}
-                            >
-                                <Text style={styles.buttonText}>Editar Mascota</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.deleteButton}
-                                onPress={() => handleDeletePet(dog.id)}
-                            >
-                                <Text style={styles.buttonText}>Eliminar Mascota</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                <TouchableOpacity
-                    style={[styles.button, styles.shadow]}
-                    onPress={handleSignOut}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.buttonText}>Cerrar Sesión</Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
+  const handleDeletePet = useCallback((petId) => {
+    console.log("handleDeletePet called", petId);
+    Alert.alert(
+      "Confirmar Eliminación",
+      "¿Estás seguro de que deseas eliminar esta mascota?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(firestore, 'Dogs', petId));
+              alert("Mascota eliminada con éxito.");
+              loadUserData();
+            } catch (error) {
+              alert("Error al eliminar la mascota:", error.message);
+            }
+          }
+        }
+      ]
     );
+  }, [loadUserData]);
+
+  const handleSignOut = () => {
+    console.log("handleSignOut called");
+    signOut(auth).then(() => {
+      console.log('Usuario cerró sesión');
+      navigation.navigate('Login');
+    }).catch((error) => {
+      console.error('Error al cerrar sesión:', error);
+    });
+  };
+
+  if (!userData) {
+    console.log("No user data");
+    return <View style={styles.loadingContainer}><Text>Loading...</Text></View>;
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Image
+        source={profileImage}
+        style={styles.profileImage}
+      />
+      <Text style={styles.title}>Perfil del Usuario</Text>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Información Personal</Text>
+        <Text style={styles.detailLabel}>Nombre:</Text>
+        <Text style={styles.detailText}>{userData.name}</Text>
+        <Text style={styles.detailLabel}>Correo Electrónico:</Text>
+        <Text style={styles.detailText}>{userData.email}</Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => {
+            console.log("Navigating to EditarPerfil");
+            navigation.navigate('EditarPerfil');
+          }}
+        >
+          <Text style={styles.buttonText}>Editar Perfil</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Mascotas</Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => {
+            console.log("Navigating to CrearMascota");
+            navigation.navigate('CrearMascota');
+          }}
+        >
+          <Text style={styles.buttonText}>Crear Mascota</Text>
+        </TouchableOpacity>
+
+        {userDogs.map(dog => (
+          <View key={dog.id} style={styles.dogContainer}>
+            <Image source={{ uri: dog.imageUrl }} style={styles.petImage} />
+            <Text style={styles.detailLabel}>Nombre:</Text>
+            <Text style={styles.detailText}>{dog.name}</Text>
+            <Text style={styles.detailLabel}>Raza:</Text>
+            <Text style={styles.detailText}>{dog.breed}</Text>
+            <Text style={styles.detailLabel}>Edad:</Text>
+            <Text style={styles.detailText}>{dog.ageYears} años {dog.ageMonths} meses</Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  console.log("Navigating to EditarMascota", dog.id);
+                  navigation.navigate('EditarMascota', { petId: dog.id });
+                }}
+              >
+                <Text style={styles.buttonText}>Editar Mascota</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeletePet(dog.id)}
+              >
+                <Text style={styles.buttonText}>Eliminar Mascota</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={[styles.button, styles.shadow]}
+          onPress={handleSignOut}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
 };
 
 const styles = StyleSheet.create({

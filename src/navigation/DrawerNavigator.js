@@ -29,7 +29,6 @@ const DrawerContent = () => (
             name="Home"
             component={BottomTabNavigator}
         />
-        <Drawer.Screen name="VetChatGPT" component={VetChatScreen} />
     </Drawer.Navigator>
 );
 

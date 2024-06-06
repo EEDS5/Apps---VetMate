@@ -11,7 +11,7 @@ const ChatStackNavigator = () => {
     <Stack.Navigator
       initialRouteName="ChatList"
       screenOptions={{
-        headerShown: false  // Puedes habilitar el encabezado si es necesario
+        headerShown: false  
       }}
     >
       <Stack.Screen name="ChatList" component={ChatListScreen} />

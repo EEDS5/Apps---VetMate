@@ -1,11 +1,10 @@
-// src/screens/Profile/EditarPerfilScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
-import { getAuth, updateEmail, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+//src/screens/Profile/EditarPerfilScreen.js
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, TextInput, Image, TouchableOpacity, BackHandler } from 'react-native';
+import { getAuth } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { firestore, storage } from '../../firebase/firebase';
-import * as ImagePicker from 'expo-image-picker';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, ref } from 'firebase/storage';
 
 const defaultImages = {
   male: require('../../../assets/img/Male_Transparent.png'),
@@ -13,220 +12,159 @@ const defaultImages = {
   other: require('../../../assets/img/Neutral_Transparent.png')
 };
 
-// Función para subir la imagen al storage
-const uploadImageToStorage = async (uri, userUid) => {
-  const response = await fetch(uri);
-  const blob = await response.blob();
-  const storageRef = ref(storage, `profile_images/${userUid}.jpg`);
-  await uploadBytes(storageRef, blob);
-  return await getDownloadURL(storageRef);
-};
+const BIO_MAX_LENGTH = 133; // Límite de caracteres para la biografía
 
 const EditarPerfilScreen = ({ navigation }) => {
+  console.log("EditarPerfilScreen rendered");
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [initialName, setInitialName] = useState('');
-  const [initialEmail, setInitialEmail] = useState('');
-  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const [bio, setBio] = useState('');
   const [profileImage, setProfileImage] = useState(null);
-  const [imageUri, setImageUri] = useState(null);
+  const [isEdited, setIsEdited] = useState(false);
+  const [gender, setGender] = useState('other');
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveCount, setSaveCount] = useState(0);
+  const isMounted = useRef(true);
 
   const auth = getAuth();
   const user = auth.currentUser;
 
   useEffect(() => {
     const loadUserData = async () => {
-      if (user) {
+      console.log("loadUserData called in EditarPerfilScreen");
+      if (user && isMounted.current) {
         const userDoc = await getDoc(doc(firestore, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setNombre(userData.name);
           setEmail(userData.email);
-          setInitialName(userData.name);
-          setInitialEmail(userData.email);
+          setBio(userData.bio || '');
+          setGender(userData.gender);
           const storageRef = ref(storage, `profile_images/${user.uid}.jpg`);
           try {
             const imageUrl = await getDownloadURL(storageRef);
-            setProfileImage({ uri: imageUrl });
+            if (isMounted.current) {
+              setProfileImage({ uri: imageUrl });
+            }
           } catch (error) {
             console.log('No profile image found, using default based on gender');
-            setProfileImage(defaultImages[userData.gender]);
+            if (isMounted.current) {
+              setProfileImage(defaultImages[userData.gender]);
+            }
           }
         }
       }
+      setIsLoading(false);
     };
 
     loadUserData();
-  }, []);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.uri);
-    }
-  };
-
-  const handleReauthenticate = async (currentPassword) => {
-    try {
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-    } catch (error) {
-      console.error('Error reautenticando al usuario:', error);
-      alert('Error al reautenticar. Por favor, inténtalo de nuevo.');
-      throw error;
-    }
-  };
-
-  const handleSendVerificationEmail = async () => {
-    try {
-      await sendEmailVerification(user);
-      setEmailVerificationSent(true);
-      Alert.alert(
-        'Verificación de Correo',
-        'Se ha enviado un correo de verificación a tu nuevo correo electrónico. Por favor, verifica tu correo y luego actualiza tu correo en la app.'
-      );
-    } catch (error) {
-      console.error('Error al enviar correo de verificación:', error);
-      alert('Hubo un error al enviar el correo de verificación. Inténtalo de nuevo.');
-    }
-  };
+    return () => {
+      isMounted.current = false;
+    };
+  }, [user]);
 
   const handleSaveChanges = async () => {
+    console.log("handleSaveChanges called");
     if (user) {
       try {
-        let updatedImageUrl = profileImage.uri;
-        if (imageUri) {
-          updatedImageUrl = await uploadImageToStorage(imageUri, user.uid);
-        }
-
-        if (email !== initialEmail) {
-          await handleReauthenticate(password);
-
-          // Actualizar datos en Firestore primero
-          await updateDoc(doc(firestore, 'users', user.uid), {
-            name: nombre,
-            email: email,
-            image: updatedImageUrl,
-          });
-
-          // Enviar el correo de verificación al nuevo correo
-          await handleSendVerificationEmail();
-        } else {
-          await updateDoc(doc(firestore, 'users', user.uid), {
-            name: nombre,
-            image: updatedImageUrl,
-          });
-
-          navigation.navigate('Perfil', { updated: true });
-        }
-      } catch (error) {
-        if (error.code === 'auth/requires-recent-login') {
-          Alert.alert(
-            'Reautenticación Requerida',
-            'Por favor, vuelve a iniciar sesión para actualizar tu correo.',
-            [
-              {
-                text: 'Cancelar',
-                style: 'cancel',
-              },
-              {
-                text: 'Reautenticar',
-                onPress: async () => {
-                  await handleReauthenticate(password);
-                  handleSaveChanges();
-                },
-              },
-            ]
-          );
-        } else {
-          console.error('Error al actualizar los datos:', error);
-          alert('Hubo un error al actualizar los datos. Inténtalo de nuevo.');
-        }
-      }
-    }
-  };
-
-  const handleUpdateEmailAfterVerification = async () => {
-    if (user) {
-      try {
-        await handleReauthenticate(password);
-        await updateEmail(user, email);
-        Alert.alert(
-          'Correo Actualizado',
-          'Tu correo ha sido actualizado correctamente. Por favor, inicia sesión nuevamente.'
-        );
-        auth.signOut().then(() => {
-          navigation.navigate('Login');
+        await updateDoc(doc(firestore, 'users', user.uid), {
+          name: nombre,
+          bio: bio,
+          gender: gender
         });
+        setSaveCount(saveCount + 1);
+        setIsEdited(false);
+        Alert.alert('Éxito', 'Los cambios han sido guardados.');
       } catch (error) {
-        console.error('Error al actualizar el correo después de la verificación:', error);
-        alert('Hubo un error al actualizar el correo después de la verificación. Inténtalo de nuevo.');
+        console.error('Error al guardar los cambios:', error);
+        Alert.alert('Error', 'Hubo un problema al guardar los cambios. Inténtalo de nuevo.');
       }
     }
   };
+
+  const handleBackPress = useCallback(() => {
+    console.log("handleBackPress called");
+
+    if (isEdited) {
+      Alert.alert(
+        'Cambios no guardados',
+        'Tienes cambios no guardados. ¿Quieres guardar los cambios antes de salir?',
+        [
+          {
+            text: 'Salir igualmente',
+            style: 'cancel',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'Guardar y salir',
+            onPress: async () => {
+              await handleSaveChanges();
+              navigation.goBack();
+            },
+            style: 'default',
+          },
+        ],
+        { cancelable: false }
+      );
+      return true; // Prevent default back action
+    } else {
+      return false; // Default back action
+    }
+  }, [isEdited, navigation, handleSaveChanges]);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    
+    return () => backHandler.remove();
+  }, [handleBackPress]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Cargando...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileContainer}>
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-          <Image
-            source={imageUri ? { uri: imageUri } : profileImage}
-            style={styles.profileImage}
-          />
-        </TouchableOpacity>
+        <Image source={profileImage} style={styles.profileImage} />
+      </View>
+      <View style={styles.section}>
+        <TextInput
+          style={[styles.input, styles.bioInput]}
+          placeholder="Escribe tu biografía aquí"
+          placeholderTextColor="rgba(0, 0, 0, 0.5)"
+          multiline={true}
+          numberOfLines={2}
+          maxLength={BIO_MAX_LENGTH}
+          value={bio}
+          onChangeText={text => { setBio(text); setIsEdited(true); }}
+        />
+        <Text style={styles.charCount}>{bio.length}/{BIO_MAX_LENGTH}</Text>
       </View>
       <Text style={styles.title}>Editar Perfil</Text>
-
       <View style={styles.section}>
         <Text style={styles.label}>Datos Actuales:</Text>
-        <Text style={styles.currentData}>Nombre: {initialName}</Text>
-        <Text style={styles.currentData}>Correo: {initialEmail}</Text>
+        <Text style={styles.currentData}>Nombre: {nombre}</Text>
+        <Text style={styles.currentData}>Correo: {email}</Text>
         <Text style={styles.label}>Nuevo Nombre:</Text>
         <TextInput
           style={styles.input}
           placeholder="Nombre"
           placeholderTextColor="rgba(0, 0, 0, 0.5)"
           value={nombre}
-          onChangeText={setNombre}
-        />
-        <Text style={styles.label}>Nuevo Correo Electrónico:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Correo Electrónico"
-          placeholderTextColor="rgba(0, 0, 0, 0.5)"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <Text style={styles.label}>Contraseña Actual:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="rgba(0, 0, 0, 0.5)"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
+          onChangeText={text => { setNombre(text); setIsEdited(true); }}
         />
         <TouchableOpacity
-          style={styles.saveButton}
+          style={[styles.saveButton, { backgroundColor: '#388E3C' }]}
           onPress={handleSaveChanges}
         >
           <Text style={styles.buttonText}>Guardar Cambios</Text>
         </TouchableOpacity>
-        {emailVerificationSent && (
-          <TouchableOpacity
-            style={styles.verifyButton}
-            onPress={handleUpdateEmailAfterVerification}
-          >
-            <Text style={styles.buttonText}>Actualizar Correo Después de Verificación</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.saveCount}>Número de veces guardado: {saveCount}</Text>
       </View>
     </ScrollView>
   );
@@ -250,13 +188,6 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 1,
     borderColor: '#c62828',
-    overflow: 'hidden',
-  },
-  imagePicker: {
-    width: 200,
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
     overflow: 'hidden',
   },
   title: {
@@ -289,23 +220,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#c62828',
   },
-  saveButton: {
-    backgroundColor: '#d32f2f',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
+  bioInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+    textAlign: 'center',
   },
-  verifyButton: {
-    backgroundColor: '#007BFF',
+  charCount: {
+    textAlign: 'right',
+    color: 'rgba(0, 0, 0, 0.6)',
+  },
+  saveButton: {
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 10,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  saveCount: {
+    marginTop: 10,
+    color: 'rgba(0, 0, 0, 0.6)',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
