@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { collection, getDocs, query, where, updateDoc, arrayUnion, doc, getDoc, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import { collection, getDocs, query, where, doc, addDoc, getDoc } from 'firebase/firestore';
 import { firestore, auth } from '../../firebase/firebase';
 import MatchApi from '../../services/api/matchApi';
 
@@ -8,39 +8,45 @@ const BuscarMatchScreen = () => {
     const [dogs, setDogs] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchDogs = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('Usuario no autenticado');
+            return;
+        }
+
+        try {
+            const q = query(collection(firestore, 'Dogs'), where('ownerId', '!=', user.uid));
+            const querySnapshot = await getDocs(q);
+            const dogsList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setDogs(dogsList);
+        } catch (error) {
+            console.error("Error al obtener los datos de los perros:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDogs = async () => {
-            const user = auth.currentUser;
-            if (!user) {
-                console.error('Usuario no autenticado');
-                return;
-            }
-
-            try {
-                const q = query(collection(firestore, 'Dogs'), where('ownerId', '!=', user.uid));
-                const querySnapshot = await getDocs(q);
-                const dogsList = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
-                setDogs(dogsList);
-            } catch (error) {
-                console.error("Error al obtener los datos de los perros:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchDogs();
 
         const intervalId = setInterval(fetchDogs, 60000); // Actualizar cada 60 segundos
         return () => clearInterval(intervalId);
     }, []);
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchDogs().then(() => setRefreshing(false));
+    }, []);
+
     const handleLike = async (id) => {
         console.log("Liked dog with id:", id);
-        await registerLike(id);
+        await sendMatchRequest(id);
         showNextDog();
     };
 
@@ -53,7 +59,7 @@ const BuscarMatchScreen = () => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % dogs.length);
     };
 
-    const registerLike = async (likedDogId) => {
+    const sendMatchRequest = async (likedDogId) => {
         const user = auth.currentUser;
         if (!user) {
             console.error('Usuario no autenticado');
@@ -61,24 +67,21 @@ const BuscarMatchScreen = () => {
         }
 
         try {
-            await updateDoc(doc(firestore, 'Dogs', likedDogId), {
-                likedBy: arrayUnion(user.uid)
-            });
-
             const likedDogDoc = await getDoc(doc(firestore, 'Dogs', likedDogId));
-            const likedBy = likedDogDoc.data().likedBy || [];
+            const likedDog = likedDogDoc.data();
 
-            if (likedBy.includes(user.uid)) {
-                console.log("It's a match!");
-                // Handle the match logic here (e.g., update Firestore, notify users, etc.)
-                const chatId = [auth.currentUser.uid, likedDogDoc.data().ownerId].sort().join('_');
-                await setDoc(doc(firestore, 'chats', chatId), {
-                    users: [auth.currentUser.uid, likedDogDoc.data().ownerId],
-                    createdAt: new Date()
-                });
-            }
+            const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+            const senderName = userDoc.data().name;
+
+            await addDoc(collection(firestore, 'MatchRequests'), {
+                senderId: user.uid,
+                senderName,
+                receiverId: likedDog.ownerId,
+                dogId: likedDogId,
+                status: 'pending'
+            });
         } catch (error) {
-            console.error("Error al registrar el like:", error);
+            console.error("Error al enviar la solicitud de match:", error);
         }
     };
 
@@ -89,16 +92,27 @@ const BuscarMatchScreen = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Buscar Match</Text>
-            {dogs.length > 0 ? (
-                <MatchApi
-                    key={dogs[currentIndex].id}
-                    dog={dogs[currentIndex]}
-                    onLike={handleLike}
-                    onDislike={handleDislike}
-                />
-            ) : (
-                <Text style={styles.noDogsText}>No hay perros disponibles</Text>
-            )}
+            <FlatList
+                data={dogs}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item, index }) => (
+                    index === currentIndex ? (
+                        <MatchApi
+                            key={item.id}
+                            dog={item}
+                            onLike={handleLike}
+                            onDislike={handleDislike}
+                        />
+                    ) : null
+                )}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
+                ListEmptyComponent={<Text style={styles.noDogsText}>No hay perros disponibles</Text>}
+            />
         </View>
     );
 };

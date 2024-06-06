@@ -3,7 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import BuscarMatchScreen from '../screens/Match/BuscarMatchScreen';
 import ProfileStackNavigator from './ProfileStackNavigator';
-import ChatStackNavigator from './ChatStackNavigator'; // Importa el nuevo stack de chat
+import ChatStackNavigator from './ChatStackNavigator'; 
+import MatchRequestsStackNavigator from './MatchRequestsStackNavigator'; // Importa el stack de solicitudes de match
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; 
 
@@ -35,12 +36,13 @@ const BottomTabNavigator = () => {
                         iconName = focused ? 'person' : 'person-outline';
                     } else if (route.name === 'ChatTab') {
                         iconName = focused ? 'chatbox' : 'chatbox-outline';
+                    } else if (route.name === 'MatchRequestsTab') {
+                        iconName = focused ? 'notifications' : 'notifications-outline';
                     }
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
                 tabBarActiveTintColor: activeTintColor,
                 tabBarInactiveTintColor: inactiveTintColor,
-                tabBarVisible: route.name === 'HomeTab' || user !== null,
             })}
         >
             <Tab.Screen
@@ -52,8 +54,12 @@ const BottomTabNavigator = () => {
             />
             {user && (
                 <>
-                
                     <Tab.Screen name="BuscarMatch" component={BuscarMatchScreen} options={{ tabBarLabel: 'Match' }} />
+                    <Tab.Screen
+                        name="MatchRequestsTab"
+                        component={MatchRequestsStackNavigator}
+                        options={{ tabBarLabel: 'Solicitudes' }}
+                    />
                     <Tab.Screen
                         name="ChatTab"
                         component={ChatStackNavigator} // Componente del stack de chat
@@ -64,7 +70,6 @@ const BottomTabNavigator = () => {
                         component={ProfileStackNavigator} 
                         options={{ tabBarLabel: 'Perfil' }}
                     />
-                    
                 </>
             )}
         </Tab.Navigator>
