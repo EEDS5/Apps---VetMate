@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 10,
-        color: '#3b5998',
+        color: '#d32f2f',
         textAlign: 'center',
     },
     chatList: {
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     sendButton: {
-        backgroundColor: '#3b5998',
+        backgroundColor: '#d32f2f',
         borderRadius: 20,
         padding: 10,
         justifyContent: 'center',
