@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, addDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, addDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const MatchRequestsScreen = ({ navigation }) => {
     const [requests, setRequests] = useState([]);
@@ -77,7 +77,7 @@ const MatchRequestsScreen = ({ navigation }) => {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.requestItem}>
-                        <Text style={styles.requestText}>Solicitud de {item.senderName} para tu perro {item.dogName} ({item.dogBreed})</Text>
+                        <Text style={styles.requestText}>El usuario {item.senderName} le dio like a tu perro {item.dogName} ({item.dogBreed})</Text>
                         <View style={styles.buttons}>
                             <TouchableOpacity
                                 style={styles.acceptButton}
