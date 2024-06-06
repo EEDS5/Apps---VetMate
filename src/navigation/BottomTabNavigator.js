@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import BuscarMatchScreen from '../screens/Match/BuscarMatchScreen';
 import ProfileStackNavigator from './ProfileStackNavigator';
-import ChatStackNavigator from './ChatStackNavigator'; // Importa el nuevo stack de chat
+import ChatStackNavigator from './ChatStackNavigator'; // Importa el stack de chat
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; 
 
@@ -52,7 +52,6 @@ const BottomTabNavigator = () => {
             />
             {user && (
                 <>
-                
                     <Tab.Screen name="BuscarMatch" component={BuscarMatchScreen} options={{ tabBarLabel: 'Match' }} />
                     <Tab.Screen
                         name="ChatTab"
@@ -64,7 +63,6 @@ const BottomTabNavigator = () => {
                         component={ProfileStackNavigator} 
                         options={{ tabBarLabel: 'Perfil' }}
                     />
-                    
                 </>
             )}
         </Tab.Navigator>

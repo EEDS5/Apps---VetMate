@@ -1,8 +1,8 @@
- // src/screens/Chat/ChatListScreen.js
+// src/screens/Chat/ChatListScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 const ChatListScreen = ({ navigation }) => {
     const [chats, setChats] = useState([]);
@@ -28,7 +28,8 @@ const ChatListScreen = ({ navigation }) => {
     }, []);
 
     const handleChat = (chat) => {
-        navigation.navigate('Chat', { chatId: chat.id, chatUsers: chat.users });
+        const otherUserId = chat.users.find(uid => uid !== auth.currentUser.uid);
+        navigation.navigate('Chat', { user: { id: otherUserId } });
     };
 
     return (
@@ -39,7 +40,7 @@ const ChatListScreen = ({ navigation }) => {
                 renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => handleChat(item)}>
                         <View style={styles.chatItem}>
-                            <Text style={styles.chatName}>{item.users.join(', ')}</Text>
+                            <Text style={styles.chatTitle}>Chat con {item.users.find(uid => uid !== auth.currentUser.uid)}</Text>
                         </View>
                     </TouchableOpacity>
                 )}
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
     },
-    chatName: {
+    chatTitle: {
         fontSize: 18,
         fontWeight: 'bold',
     },

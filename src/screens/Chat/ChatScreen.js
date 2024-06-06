@@ -5,11 +5,12 @@ import { auth, firestore } from '../../firebase/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const ChatScreen = ({ route }) => {
-    const { chatId, chatUsers } = route.params;
+    const { user } = route.params;
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
+        const chatId = [auth.currentUser.uid, user.id].sort().join('_');
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
@@ -22,11 +23,12 @@ const ChatScreen = ({ route }) => {
         });
 
         return () => unsubscribe();
-    }, [chatId]);
+    }, [user.id]);
 
     const sendMessage = async () => {
         if (message.trim() === '') return;
 
+        const chatId = [auth.currentUser.uid, user.id].sort().join('_');
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
 
         await addDoc(messagesRef, {
@@ -47,7 +49,7 @@ const ChatScreen = ({ route }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.chatTitle}>Chat con {chatUsers.filter(id => id !== auth.currentUser.uid).join(', ')}</Text>
+            <Text style={styles.chatTitle}>Chat con {user.name}</Text>
             <FlatList
                 data={messages}
                 keyExtractor={(item) => item.id}

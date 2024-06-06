@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { collection, getDocs, query, where, updateDoc, arrayUnion, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, updateDoc, arrayUnion, doc, addDoc, getDoc } from 'firebase/firestore';
 import { firestore, auth } from '../../firebase/firebase';
 import MatchApi from '../../services/api/matchApi';
 
@@ -40,7 +40,7 @@ const BuscarMatchScreen = () => {
 
     const handleLike = async (id) => {
         console.log("Liked dog with id:", id);
-        await registerLike(id);
+        await sendMatchRequest(id);
         showNextDog();
     };
 
@@ -53,7 +53,7 @@ const BuscarMatchScreen = () => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % dogs.length);
     };
 
-    const registerLike = async (likedDogId) => {
+    const sendMatchRequest = async (likedDogId) => {
         const user = auth.currentUser;
         if (!user) {
             console.error('Usuario no autenticado');
@@ -61,24 +61,17 @@ const BuscarMatchScreen = () => {
         }
 
         try {
-            await updateDoc(doc(firestore, 'Dogs', likedDogId), {
-                likedBy: arrayUnion(user.uid)
-            });
-
             const likedDogDoc = await getDoc(doc(firestore, 'Dogs', likedDogId));
-            const likedBy = likedDogDoc.data().likedBy || [];
+            const likedDog = likedDogDoc.data();
 
-            if (likedBy.includes(user.uid)) {
-                console.log("It's a match!");
-                // Handle the match logic here (e.g., update Firestore, notify users, etc.)
-                const chatId = [auth.currentUser.uid, likedDogDoc.data().ownerId].sort().join('_');
-                await setDoc(doc(firestore, 'chats', chatId), {
-                    users: [auth.currentUser.uid, likedDogDoc.data().ownerId],
-                    createdAt: new Date()
-                });
-            }
+            await addDoc(collection(firestore, 'MatchRequests'), {
+                senderId: user.uid,
+                receiverId: likedDog.ownerId,
+                dogId: likedDogId,
+                status: 'pending'
+            });
         } catch (error) {
-            console.error("Error al registrar el like:", error);
+            console.error("Error al enviar la solicitud de match:", error);
         }
     };
 
