@@ -1,28 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { auth, firestore } from '../../firebase/firebase';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, addDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const MatchRequestsScreen = ({ navigation }) => {
     const [requests, setRequests] = useState([]);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchRequests = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('Usuario no autenticado');
+            return;
+        }
+
+        const q = query(collection(firestore, 'MatchRequests'), where('receiverId', '==', user.uid), where('status', '==', 'pending'));
+        const querySnapshot = await getDocs(q);
+        const requestsList = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        setRequests(requestsList);
+    };
 
     useEffect(() => {
-        const fetchRequests = async () => {
-            const user = auth.currentUser;
-            if (!user) {
-                console.error('Usuario no autenticado');
-                return;
-            }
-
-            const q = query(collection(firestore, 'MatchRequests'), where('receiverId', '==', user.uid), where('status', '==', 'pending'));
-            const querySnapshot = await getDocs(q);
-            const requestsList = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            setRequests(requestsList);
-        };
-
         fetchRequests();
     }, []);
 
@@ -30,11 +31,17 @@ const MatchRequestsScreen = ({ navigation }) => {
         try {
             await updateDoc(doc(firestore, 'MatchRequests', requestId), { status: 'accepted' });
             const chatId = [auth.currentUser.uid, senderId].sort().join('_');
-            await addDoc(collection(firestore, 'chats'), {
-                users: [auth.currentUser.uid, senderId],
-                createdAt: serverTimestamp(),
-                chatId
-            });
+
+            const chatRef = doc(firestore, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                await setDoc(chatRef, {
+                    users: [auth.currentUser.uid, senderId],
+                    createdAt: serverTimestamp(),
+                    chatId
+                });
+            }
 
             const senderDoc = await getDoc(doc(firestore, 'users', senderId));
             const senderName = senderDoc.data().name;
@@ -52,10 +59,16 @@ const MatchRequestsScreen = ({ navigation }) => {
         try {
             await deleteDoc(doc(firestore, 'MatchRequests', requestId));
             Alert.alert("Solicitud rechazada");
+            fetchRequests();
         } catch (error) {
             console.error("Error al rechazar la solicitud:", error);
         }
     };
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchRequests().then(() => setRefreshing(false));
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -81,6 +94,12 @@ const MatchRequestsScreen = ({ navigation }) => {
                         </View>
                     </View>
                 )}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
             />
         </View>
     );
