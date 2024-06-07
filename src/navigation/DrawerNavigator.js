@@ -8,7 +8,6 @@ import RegistroScreen from '../screens/Auth/RegistroScreen';
 import Registro2Screen from '../screens/Auth/Registro2Screen'; 
 import Registro3Screen from '../screens/Auth/Registro3Screen';
 import LoginScreen from '../screens/Auth/LoginScreen';
-import VetChatScreen from '../screens/Match/VetChatScreen';
 import HomeScreen from '../screens/HomeScreen';
 
 const Drawer = createDrawerNavigator();
