@@ -65,25 +65,28 @@ const BuscarMatchScreen = () => {
             console.error('Usuario no autenticado');
             return;
         }
-
+    
         try {
             const likedDogDoc = await getDoc(doc(firestore, 'Dogs', likedDogId));
             const likedDog = likedDogDoc.data();
-
+    
             const userDoc = await getDoc(doc(firestore, 'users', user.uid));
             const senderName = userDoc.data().name;
-
+    
             await addDoc(collection(firestore, 'MatchRequests'), {
                 senderId: user.uid,
                 senderName,
                 receiverId: likedDog.ownerId,
                 dogId: likedDogId,
+                dogName: likedDog.name, // Añadir el nombre del perro
+                dogBreed: likedDog.breed, // Añadir la raza del perro
                 status: 'pending'
             });
         } catch (error) {
             console.error("Error al enviar la solicitud de match:", error);
         }
     };
+    
 
     if (isLoading) {
         return <View style={styles.centered}><ActivityIndicator size="large" color="#d32f2f" /></View>;
