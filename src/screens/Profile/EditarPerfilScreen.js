@@ -5,6 +5,7 @@ import { getAuth } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { firestore, storage } from '../../firebase/firebase';
 import { getDownloadURL, ref } from 'firebase/storage';
+import Filter from 'bad-words-es';
 
 const defaultImages = {
   male: require('../../../assets/img/Male_Transparent.png'),
@@ -28,6 +29,13 @@ const EditarPerfilScreen = ({ navigation }) => {
 
   const auth = getAuth();
   const user = auth.currentUser;
+
+  const filter = new Filter({ languages: ['es'] });
+  filter.addWords('pendejo', 'chingada', 'pinche', 'culero', 'mierda', 'perra', 'perro',
+                  'cabrón', 'marica', 'joto', 'verga', 'chingar', 'coño', 'pelotudo',
+                  'concha', 'gilipollas', 'hijueputa', 'pija', 'trola', 'boludo', 
+                  'choto', 'forro', 'mogólico', 'trolo', 'tarado', 'imbécil', 
+                  'pelotudo', 'pajero', 'cornudo', 'zorra', 'zorro'); //Agrega palabras a la lista negra
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -64,13 +72,37 @@ const EditarPerfilScreen = ({ navigation }) => {
     };
   }, [user]);
 
+  const validateName = (name) => {
+    const re = /^[a-zA-Z\sáéíóúÁÉÍÓÚñÑüÜ]+$/;
+    return re.test(String(name));
+  };
+
   const handleSaveChanges = async () => {
     console.log("handleSaveChanges called");
+
+    const trimmedName = nombre.trim();
+    const trimmedBio = bio.trim();
+
+    if (!validateName(trimmedName)) {
+      Alert.alert('Error', 'Por favor, ingresa un nombre válido.');
+      return;
+    }
+
+    if (trimmedBio === '') {
+      Alert.alert('Error', 'La biografía no puede estar vacía.');
+      return;
+    }
+
+    if (filter.isProfane(trimmedBio)) {
+      Alert.alert('Error', 'La biografía contiene palabras inapropiadas.');
+      return;
+    }
+
     if (user) {
       try {
         await updateDoc(doc(firestore, 'users', user.uid), {
-          name: nombre,
-          bio: bio,
+          name: trimmedName,
+          bio: trimmedBio,
           gender: gender
         });
         setSaveCount(saveCount + 1);
@@ -86,6 +118,9 @@ const EditarPerfilScreen = ({ navigation }) => {
   const handleBackPress = useCallback(() => {
     console.log("handleBackPress called");
 
+    const trimmedName = nombre.trim();
+    const trimmedBio = bio.trim();
+
     if (isEdited) {
       Alert.alert(
         'Cambios no guardados',
@@ -99,6 +134,18 @@ const EditarPerfilScreen = ({ navigation }) => {
           {
             text: 'Guardar y salir',
             onPress: async () => {
+              if (!validateName(trimmedName)) {
+                Alert.alert('Error', 'Por favor, ingresa un nombre válido.');
+                return;
+              }
+
+              if (trimmedBio === '' || filter.isProfane(trimmedBio)) {
+                Alert.alert(
+                  'Error',
+                  trimmedBio === '' ? 'La biografía no puede estar vacía.' : 'La biografía contiene palabras inapropiadas.'
+                );
+                return;
+              }
               await handleSaveChanges();
               navigation.goBack();
             },
@@ -111,7 +158,7 @@ const EditarPerfilScreen = ({ navigation }) => {
     } else {
       return false; // Default back action
     }
-  }, [isEdited, navigation, handleSaveChanges]);
+  }, [isEdited, navigation, handleSaveChanges, nombre, bio]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
@@ -251,3 +298,4 @@ const styles = StyleSheet.create({
 });
 
 export default EditarPerfilScreen;
+
