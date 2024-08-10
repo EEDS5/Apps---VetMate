@@ -1,3 +1,4 @@
+//src/screens/Match/BuscarMatchScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import { collection, getDocs, query, where, doc, addDoc, getDoc } from 'firebase/firestore';

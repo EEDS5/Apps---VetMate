@@ -1,3 +1,4 @@
+//src/screens/profile/PerfilScreen.js
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth';

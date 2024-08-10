@@ -1,3 +1,4 @@
+//src/screens/profile/EditarMascotaScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Modal, ScrollView, Alert
